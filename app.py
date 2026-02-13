@@ -165,13 +165,16 @@ Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUS
             data = response.json()
             return data['content'][0]['text']
         else:
-            error_msg = f"API error {response.status_code}: {response.text[:200]}"
+            error_msg = f"API error {response.status_code}: {response.text[:500]}"
             print(f"[DEBUG] {error_msg}")
-            return get_demo_script(topic)
+            # Return error with demo fallback indicator
+            raise Exception(error_msg)
             
     except Exception as e:
-        print(f"[DEBUG] Exception: {str(e)}")
-        return get_demo_script(topic)
+        error_str = str(e)
+        print(f"[DEBUG] Exception: {error_str}")
+        # Return a special error format that the API endpoint can detect
+        return f"__ERROR__:{error_str}__DEMO__:{get_demo_script(topic)}"
 
 def get_demo_script(topic):
     """Return a demo script based on topic keywords."""
@@ -258,19 +261,33 @@ def api_generate():
     time.sleep(0.5)
     
     # Generate script
-    script = generate_keynote_script(topic, duration, style)
+    result = generate_keynote_script(topic, duration, style)
     
-    # Check if it was demo mode
-    is_demo = any(script == DEMO_SCRIPTS[k] for k in DEMO_SCRIPTS)
+    # Check if it was an error with demo fallback
+    if result.startswith("__ERROR__:"):
+        parts = result.split("__DEMO__:", 1)
+        error_msg = parts[0].replace("__ERROR__:", "")
+        script = parts[1] if len(parts) > 1 else get_demo_script(topic)
+        is_demo = True
+        api_error = error_msg
+    else:
+        script = result
+        is_demo = False
+        api_error = None
     
-    return jsonify({
+    response_data = {
         'script': script,
         'topic': topic,
         'duration': duration,
         'word_count': len(script.split()),
         'generated_at': datetime.now().isoformat(),
         'demo_mode': is_demo
-    })
+    }
+    
+    if api_error:
+        response_data['api_error'] = api_error
+    
+    return jsonify(response_data)
 
 @app.route('/api/voice', methods=['POST'])
 def api_voice():
