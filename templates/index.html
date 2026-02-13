@@ -748,7 +748,12 @@
                     return;
                 }
 
-                audioPlayer.src = data.audio_url;
+                // Handle base64 audio data
+                if (data.audio_base64) {
+                    audioPlayer.src = 'data:' + data.audio_mime + ';base64,' + data.audio_base64;
+                } else if (data.audio_url) {
+                    audioPlayer.src = data.audio_url;
+                }
                 audioSection.style.display = 'block';
                 audioSection.scrollIntoView({ behavior: 'smooth' });
 

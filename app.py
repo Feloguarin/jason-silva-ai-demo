@@ -198,6 +198,8 @@ Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUS
         # Network/DNS error - fallback to demo (common on Vercel serverless)
         return get_demo_script(topic), True
 
+import base64
+
 def generate_voice(script_text):
     """Generate voice using ElevenLabs."""
     
@@ -227,13 +229,11 @@ def generate_voice(script_text):
         )
         
         if response.status_code == 200:
-            audio_path = f"static/audio_{int(time.time())}.mp3"
-            os.makedirs("static", exist_ok=True)
-            with open(audio_path, 'wb') as f:
-                f.write(response.content)
-            return audio_path, None
+            # Return base64 encoded audio (Vercel is read-only filesystem)
+            audio_base64 = base64.b64encode(response.content).decode('utf-8')
+            return audio_base64, None
         else:
-            return None, f"Voice generation error: {response.status_code}"
+            return None, f"Voice generation error: {response.status_code} - {response.text[:200]}"
             
     except Exception as e:
         return None, f"Voice generation error: {str(e)}"
@@ -275,13 +275,14 @@ def api_voice():
     if not script:
         return jsonify({'error': 'Script required'}), 400
     
-    audio_path, error = generate_voice(script)
+    audio_base64, error = generate_voice(script)
     
     if error:
         return jsonify({'error': error}), 500
     
     return jsonify({
-        'audio_url': audio_path.replace('static/', '/static/'),
+        'audio_base64': audio_base64,
+        'audio_mime': 'audio/mpeg',
         'duration_estimate': len(script.split()) / 150
     })
 
