@@ -13,13 +13,13 @@ JASON_VOICE_ID = 'Xar9jZKMXSKxBNlDsFCr'
 
 # Lazy-load API keys (Vercel serverless needs this)
 def get_anthropic_key():
-    key = os.getenv('ANTHROPIC_API_KEY', '')
+    key = os.getenv('ANTHROPIC_API_KEY', '').strip()  # Strip whitespace/newlines
     # Debug: Log key presence (not the key itself)
     print(f"[DEBUG] ANTHROPIC_API_KEY present: {bool(key)}, length: {len(key)}")
     return key
 
 def get_elevenlabs_key():
-    key = os.getenv('ELEVENLABS_API_KEY', '')
+    key = os.getenv('ELEVENLABS_API_KEY', '').strip()  # Strip whitespace/newlines
     print(f"[DEBUG] ELEVENLABS_API_KEY present: {bool(key)}, length: {len(key)}")
     return key
 
