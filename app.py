@@ -147,7 +147,7 @@ Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUS
                 "anthropic-version": "2023-06-01"
             },
             json={
-                "model": "claude-3-5-sonnet-20240620",
+                "model": "claude-3-opus-20240229",
                 "max_tokens": 4000,
                 "temperature": 0.8,
                 "system": system_prompt,
