@@ -4,6 +4,10 @@ import json
 import time
 from datetime import datetime
 import requests
+import urllib3
+
+# Disable SSL warnings for Vercel compatibility
+urllib3.disable_warnings()
 
 app = Flask(__name__)
 
@@ -81,28 +85,30 @@ Structure:
 Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUSE), and emphasis."""
 
     try:
+        # Use Anthropic API directly (more reliable than OpenRouter on Vercel)
         response = requests.post(
-            "https://api.openrouter.ai/api/v1/chat/completions",
+            "https://api.anthropic.com/v1/messages",
             headers={
-                "Authorization": f"Bearer {ANTHROPIC_API_KEY}",
+                "x-api-key": ANTHROPIC_API_KEY,
                 "Content-Type": "application/json",
-                "HTTP-Referer": "https://demo.jasonsilva.ai"
+                "anthropic-version": "2023-06-01"
             },
             json={
-                "model": "anthropic/claude-sonnet-4-5",
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
+                "model": "claude-3-5-sonnet-20241022",
                 "max_tokens": 4000,
-                "temperature": 0.8
+                "temperature": 0.8,
+                "system": system_prompt,
+                "messages": [
+                    {"role": "user", "content": user_prompt}
+                ]
             },
-            timeout=60
+            timeout=60,
+            verify=False  # Bypass SSL for Vercel compatibility
         )
         
         if response.status_code == 200:
             data = response.json()
-            return data['choices'][0]['message']['content']
+            return data['content'][0]['text']
         else:
             return f"Error: {response.status_code} - {response.text}"
             
@@ -131,7 +137,8 @@ def generate_voice(script_text):
                     "style": 0.50
                 }
             },
-            timeout=120
+            timeout=120,
+            verify=False
         )
         
         if response.status_code == 200:
