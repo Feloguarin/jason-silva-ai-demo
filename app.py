@@ -166,22 +166,22 @@ Structure:
 Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUSE), and emphasis."""
 
     try:
-        # Try OpenRouter
+        # Use Anthropic API directly (OpenRouter DNS fails on Vercel)
         response = requests.post(
-            "https://api.openrouter.ai/api/v1/chat/completions",
+            "https://api.anthropic.com/v1/messages",
             headers={
-                "Authorization": f"Bearer {ANTHROPIC_API_KEY}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://demo.jasonsilva.ai"
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json"
             },
             json={
-                "model": "anthropic/claude-3.5-sonnet",
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
+                "model": "claude-sonnet-4-20250514",
                 "max_tokens": 4000,
-                "temperature": 0.8
+                "temperature": 0.8,
+                "system": system_prompt,
+                "messages": [
+                    {"role": "user", "content": user_prompt}
+                ]
             },
             timeout=30,
             verify=certifi.where()
@@ -189,13 +189,13 @@ Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUS
         
         if response.status_code == 200:
             data = response.json()
-            return data['choices'][0]['message']['content'], False
+            return data['content'][0]['text'], False
         else:
             # API error - fallback to demo
             return get_demo_script(topic), True
             
     except Exception:
-        # Network/DNS error - fallback to demo (common on Vercel serverless)
+        # Network error - fallback to demo
         return get_demo_script(topic), True
 
 import base64
