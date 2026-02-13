@@ -4,21 +4,24 @@ import json
 import time
 from datetime import datetime
 import requests
-import ssl
 import certifi
 
 app = Flask(__name__)
 
-# API Keys from environment
-ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
-ELEVENLABS_API_KEY = os.getenv('ELEVENLABS_API_KEY', '')
-JASON_VOICE_ID = 'Xar9jZKMXSKxBNlDsFCr'  # Jason Silva voice clone
+# Voice ID constant
+JASON_VOICE_ID = 'Xar9jZKMXSKxBNlDsFCr'
 
-# Create SSL context with certifi certificates
-def get_ssl_context():
-    """Create SSL context with proper certificate bundle."""
-    context = ssl.create_default_context(cafile=certifi.where())
-    return context
+# Lazy-load API keys (Vercel serverless needs this)
+def get_anthropic_key():
+    key = os.getenv('ANTHROPIC_API_KEY', '')
+    # Debug: Log key presence (not the key itself)
+    print(f"[DEBUG] ANTHROPIC_API_KEY present: {bool(key)}, length: {len(key)}")
+    return key
+
+def get_elevenlabs_key():
+    key = os.getenv('ELEVENLABS_API_KEY', '')
+    print(f"[DEBUG] ELEVENLABS_API_KEY present: {bool(key)}, length: {len(key)}")
+    return key
 
 # Demo scripts for fallback when APIs fail
 DEMO_SCRIPTS = {
@@ -92,8 +95,11 @@ Don't miss it."""
 def generate_keynote_script(topic, duration="10 min", style="inspirational"):
     """Generate a keynote script using Claude or fallback to demo."""
     
+    ANTHROPIC_API_KEY = get_anthropic_key()
+    
     # If no API key, use demo mode
     if not ANTHROPIC_API_KEY:
+        print("[DEBUG] No API key, using demo mode")
         return get_demo_script(topic)
     
     word_count = {
@@ -131,7 +137,8 @@ Structure:
 Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUSE), and emphasis."""
 
     try:
-        # Use Anthropic API with proper SSL handling
+        # Configure session with certifi certificates
+        print(f"[DEBUG] Making request to Anthropic API...")
         response = requests.post(
             "https://api.anthropic.com/v1/messages",
             headers={
@@ -148,19 +155,22 @@ Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUS
                     {"role": "user", "content": user_prompt}
                 ]
             },
-            timeout=60
+            timeout=60,
+            verify=certifi.where()  # Use certifi certificate bundle
         )
+        
+        print(f"[DEBUG] Response status: {response.status_code}")
         
         if response.status_code == 200:
             data = response.json()
             return data['content'][0]['text']
         else:
-            # Fallback to demo on API error
-            print(f"API error {response.status_code}: {response.text}")
+            error_msg = f"API error {response.status_code}: {response.text[:200]}"
+            print(f"[DEBUG] {error_msg}")
             return get_demo_script(topic)
             
     except Exception as e:
-        print(f"Error generating script: {str(e)}")
+        print(f"[DEBUG] Exception: {str(e)}")
         return get_demo_script(topic)
 
 def get_demo_script(topic):
@@ -179,6 +189,8 @@ def get_demo_script(topic):
 
 def generate_voice(script_text):
     """Generate voice using ElevenLabs."""
+    
+    ELEVENLABS_API_KEY = get_elevenlabs_key()
     
     if not ELEVENLABS_API_KEY:
         return None, "Demo mode: Voice generation requires ElevenLabs API key"
@@ -199,7 +211,8 @@ def generate_voice(script_text):
                     "style": 0.50
                 }
             },
-            timeout=120
+            timeout=120,
+            verify=certifi.where()
         )
         
         if response.status_code == 200:
@@ -219,6 +232,18 @@ def generate_voice(script_text):
 def index():
     return render_template('index.html')
 
+@app.route('/api/debug')
+def api_debug():
+    """Debug endpoint to check environment."""
+    return jsonify({
+        'anthropic_key_present': bool(os.getenv('ANTHROPIC_API_KEY', '')),
+        'anthropic_key_length': len(os.getenv('ANTHROPIC_API_KEY', '')),
+        'elevenlabs_key_present': bool(os.getenv('ELEVENLABS_API_KEY', '')),
+        'elevenlabs_key_length': len(os.getenv('ELEVENLABS_API_KEY', '')),
+        'certifi_path': certifi.where(),
+        'all_env_vars': list(os.environ.keys())
+    })
+
 @app.route('/api/generate', methods=['POST'])
 def api_generate():
     data = request.json
@@ -235,15 +260,16 @@ def api_generate():
     # Generate script
     script = generate_keynote_script(topic, duration, style)
     
-    if script.startswith("Error"):
-        return jsonify({'error': script}), 500
+    # Check if it was demo mode
+    is_demo = any(script == DEMO_SCRIPTS[k] for k in DEMO_SCRIPTS)
     
     return jsonify({
         'script': script,
         'topic': topic,
         'duration': duration,
         'word_count': len(script.split()),
-        'generated_at': datetime.now().isoformat()
+        'generated_at': datetime.now().isoformat(),
+        'demo_mode': is_demo
     })
 
 @app.route('/api/voice', methods=['POST'])
