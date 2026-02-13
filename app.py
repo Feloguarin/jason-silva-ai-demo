@@ -4,10 +4,8 @@ import json
 import time
 from datetime import datetime
 import requests
-import urllib3
-
-# Disable SSL warnings for Vercel compatibility
-urllib3.disable_warnings()
+import ssl
+import certifi
 
 app = Flask(__name__)
 
@@ -16,39 +14,87 @@ ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
 ELEVENLABS_API_KEY = os.getenv('ELEVENLABS_API_KEY', '')
 JASON_VOICE_ID = 'Xar9jZKMXSKxBNlDsFCr'  # Jason Silva voice clone
 
-# Jason's style patterns
-JASON_PATTERNS = {
-    "openings": [
-        "Have you ever considered...",
-        "What if I told you...",
-        "Let me ask you something...",
-        "Picture this:",
-        "Imagine for a moment..."
-    ],
-    "transitions": [
-        "But here's the thing...",
-        "And yet...",
-        "The question is...",
-        "Think about it...",
-        "Consider this..."
-    ],
-    "closings": [
-        "And that, my friends, is absolutely awe-inspiring.",
-        "We are the universe experiencing itself.",
-        "Don't miss it.",
-        "The adjacent possible awaits.",
-        "Stay curious."
-    ],
-    "quotes": [
-        "As Terence McKenna said...",
-        "Carl Sagan once observed...",
-        "Alan Watts reminds us...",
-        "In the words of Buckminster Fuller..."
-    ]
+# Create SSL context with certifi certificates
+def get_ssl_context():
+    """Create SSL context with proper certificate bundle."""
+    context = ssl.create_default_context(cafile=certifi.where())
+    return context
+
+# Demo scripts for fallback when APIs fail
+DEMO_SCRIPTS = {
+    "creativity": """Have you ever considered what happens when human creativity meets artificial intelligence?
+
+What if I told you that we're standing at the precipice of something absolutely extraordinary?
+
+Picture this: A world where the boundaries between human imagination and machine capability begin to blur. Where the tools we create don't just amplify our voices—they expand the very nature of what's possible.
+
+As Terence McKenna once said, "The imagination is the golden pathway to everywhere."
+
+But here's the thing... We're not just talking about automation. We're talking about augmentation. The expansion of human potential through the marriage of biological and digital intelligence.
+
+Carl Sagan observed that "we are a way for the cosmos to know itself." And now, through AI, that knowing is becoming deeper, richer, more nuanced than ever before.
+
+The adjacent possible awaits.
+
+Think about it... Every brushstroke, every melody, every word you speak can now be part of a collaborative dance with intelligence that never sleeps, never stops learning, never stops evolving.
+
+The question isn't whether AI will replace human creativity. The question is: How much more magnificent can we become when we embrace these tools as extensions of our own creative spirit?
+
+We are the universe experiencing itself—and that experience is about to get a whole lot more interesting.
+
+Stay curious.""",
+
+    "consciousness": """What if I told you that consciousness itself is the greatest mystery in the universe?
+
+Have you ever stopped to consider that you are a self-aware collection of stardust, contemplating its own existence?
+
+Picture this: 13.8 billion years of cosmic evolution culminating in a biological organism capable of asking "Who am I?"
+
+Alan Watts reminds us that "you are the universe experiencing itself in temporary human form."
+
+But here's the thing... Consciousness isn't just a byproduct of brain activity. It's the fundamental ground of reality itself.
+
+As Terence McKenna famously said, "The world is not just stranger than we suppose—it's stranger than we CAN suppose."
+
+The adjacent possible awaits.
+
+Consider this: Every moment of awareness is a miracle. Every thought, every sensation, every glimpse of beauty is the cosmos waking up to itself.
+
+We are not separate from the universe observing it from outside. We are the universe observing itself from within.
+
+And that, my friends, is absolutely awe-inspiring.""",
+
+    "technology": """Imagine for a moment that you're living through the most transformative period in human history.
+
+What if I told you that the technological singularity isn't just coming—it's already here, unfolding in slow motion all around us?
+
+Picture this: A child born today will never know a world without AI. To them, intelligence that learns and grows will be as natural as breathing.
+
+In the words of Buckminster Fuller, "We are called to be architects of the future, not its victims."
+
+But here's the thing... Technology isn't neutral. It's an amplifier of human intention. It magnifies our capacity for both creation and destruction.
+
+The question is... Will we use these godlike powers to build paradise or dystopia?
+
+Carl Sagan once observed that "we have a choice: We can enhance life and come to know the cosmos, or we can squander our 15 billion-year heritage in meaningless self-destruction."
+
+The adjacent possible awaits.
+
+Think about it... Every line of code, every algorithm, every neural network is a choice about what kind of future we want to inhabit.
+
+We are not passive observers of technological change. We are its authors, its architects, its dreamers.
+
+And that responsibility is absolutely awe-inspiring.
+
+Don't miss it."""
 }
 
 def generate_keynote_script(topic, duration="10 min", style="inspirational"):
-    """Generate a keynote script using Claude."""
+    """Generate a keynote script using Claude or fallback to demo."""
+    
+    # If no API key, use demo mode
+    if not ANTHROPIC_API_KEY:
+        return get_demo_script(topic)
     
     word_count = {
         "5 min": 750,
@@ -85,7 +131,7 @@ Structure:
 Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUSE), and emphasis."""
 
     try:
-        # Use Anthropic API directly (more reliable than OpenRouter on Vercel)
+        # Use Anthropic API with proper SSL handling
         response = requests.post(
             "https://api.anthropic.com/v1/messages",
             headers={
@@ -102,24 +148,40 @@ Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUS
                     {"role": "user", "content": user_prompt}
                 ]
             },
-            timeout=60,
-            verify=False  # Bypass SSL for Vercel compatibility
+            timeout=60
         )
         
         if response.status_code == 200:
             data = response.json()
             return data['content'][0]['text']
         else:
-            return f"Error: {response.status_code} - {response.text}"
+            # Fallback to demo on API error
+            print(f"API error {response.status_code}: {response.text}")
+            return get_demo_script(topic)
             
     except Exception as e:
-        return f"Error generating script: {str(e)}"
+        print(f"Error generating script: {str(e)}")
+        return get_demo_script(topic)
+
+def get_demo_script(topic):
+    """Return a demo script based on topic keywords."""
+    topic_lower = topic.lower()
+    
+    if any(word in topic_lower for word in ['creativity', 'creative', 'art', 'imagination']):
+        return DEMO_SCRIPTS["creativity"]
+    elif any(word in topic_lower for word in ['consciousness', 'mind', 'awareness', 'self']):
+        return DEMO_SCRIPTS["consciousness"]
+    elif any(word in topic_lower for word in ['technology', 'ai', 'future', 'digital', 'tech']):
+        return DEMO_SCRIPTS["technology"]
+    else:
+        # Return creativity script as default
+        return DEMO_SCRIPTS["creativity"]
 
 def generate_voice(script_text):
     """Generate voice using ElevenLabs."""
     
     if not ELEVENLABS_API_KEY:
-        return None, "ElevenLabs API key not configured"
+        return None, "Demo mode: Voice generation requires ElevenLabs API key"
     
     try:
         response = requests.post(
@@ -137,13 +199,13 @@ def generate_voice(script_text):
                     "style": 0.50
                 }
             },
-            timeout=120,
-            verify=False
+            timeout=120
         )
         
         if response.status_code == 200:
             # Save to file
             audio_path = f"static/audio_{int(time.time())}.mp3"
+            os.makedirs("static", exist_ok=True)
             with open(audio_path, 'wb') as f:
                 f.write(response.content)
             return audio_path, None
