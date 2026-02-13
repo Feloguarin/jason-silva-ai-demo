@@ -137,43 +137,41 @@ Structure:
 Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUSE), and emphasis."""
 
     try:
-        # Configure session with certifi certificates
-        print(f"[DEBUG] Making request to Anthropic API...")
+        # Try OpenRouter first (better model access)
+        print(f"[DEBUG] Making request to OpenRouter...")
         response = requests.post(
-            "https://api.anthropic.com/v1/messages",
+            "https://api.openrouter.ai/api/v1/chat/completions",
             headers={
-                "x-api-key": ANTHROPIC_API_KEY,
+                "Authorization": f"Bearer {ANTHROPIC_API_KEY}",
                 "Content-Type": "application/json",
-                "anthropic-version": "2023-06-01"
+                "HTTP-Referer": "https://demo.jasonsilva.ai"
             },
             json={
-                "model": "claude-3-opus-20240229",
-                "max_tokens": 4000,
-                "temperature": 0.8,
-                "system": system_prompt,
+                "model": "anthropic/claude-3.5-sonnet",
                 "messages": [
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
-                ]
+                ],
+                "max_tokens": 4000,
+                "temperature": 0.8
             },
             timeout=60,
-            verify=certifi.where()  # Use certifi certificate bundle
+            verify=certifi.where()
         )
         
-        print(f"[DEBUG] Response status: {response.status_code}")
+        print(f"[DEBUG] OpenRouter response status: {response.status_code}")
         
         if response.status_code == 200:
             data = response.json()
-            return data['content'][0]['text']
+            return data['choices'][0]['message']['content']
         else:
             error_msg = f"API error {response.status_code}: {response.text[:500]}"
             print(f"[DEBUG] {error_msg}")
-            # Return error with demo fallback indicator
             raise Exception(error_msg)
             
     except Exception as e:
         error_str = str(e)
         print(f"[DEBUG] Exception: {error_str}")
-        # Return a special error format that the API endpoint can detect
         return f"__ERROR__:{error_str}__DEMO__:{get_demo_script(topic)}"
 
 def get_demo_script(topic):
