@@ -132,10 +132,10 @@ def generate_keynote_script(topic, duration="10 min", style="inspirational"):
         return get_demo_script(topic), True
     
     word_count = {
-        "5 min": 750,
-        "10 min": 1500,
-        "20 min": 3000
-    }.get(duration, 1500)
+        "1 min": 130,
+        "2 min": 260,
+        "5 min": 400
+    }.get(duration, 260)
     
     system_prompt = """You are generating keynote content in the style of Jason Silva.
 
@@ -246,7 +246,7 @@ def index():
 def api_generate():
     data = request.json
     topic = data.get('topic', '')
-    duration = data.get('duration', '10 min')
+    duration = data.get('duration', '2 min')
     style = data.get('style', 'inspirational')
     
     if not topic:
@@ -283,7 +283,7 @@ def api_voice():
     return jsonify({
         'audio_base64': audio_base64,
         'audio_mime': 'audio/mpeg',
-        'duration_estimate': len(script.split()) / 150
+        'duration_estimate': len(script.split()) / 130
     })
 
 @app.route('/api/guardrails', methods=['POST'])
