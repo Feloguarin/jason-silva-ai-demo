@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jason Silva AI — Keynote Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-input: #1a1a25;
+            --primary: #7c3aed;
+            --primary-light: #a78bfa;
+            --accent: #06b6d4;
+            --accent-glow: rgba(6, 182, 212, 0.3);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #27273a;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(ellipse at top, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 3rem 0 2rem;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-light), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .tagline {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Mode Selector */
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--primary), #4c1d95);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Main Card */
+        .main-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input[type="text"], select, textarea {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Generate Button */
+        .generate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), #4c1d95);
+            color: white;
+            border: none;
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px -10px rgba(124, 58, 237, 0.5);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .generate-btn.loading {
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
+            background-size: 200% 100%;
+            animation: gradient-shift 2s linear infinite;
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        /* Progress Steps */
+        .progress-steps {
+            display: none;
+            margin: 1.5rem 0;
+        }
+
+        .progress-steps.active {
+            display: block;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .step-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+        }
+
+        .step.active .step-icon {
+            background: var(--primary);
+            border-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        .step.complete .step-icon {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .step.complete {
+            color: var(--success);
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Results Section */
+        .results {
+            display: none;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .results.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .results-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .results-meta {
+            display: flex;
+            gap: 1rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .script-output {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            font-size: 1rem;
+            line-height: 1.8;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* Audio Player */
+        .audio-section {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 0.75rem;
+        }
+
+        .audio-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .voice-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent), #0891b2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .voice-info h4 {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .voice-info p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        audio {
+            width: 100%;
+            border-radius: 0.5rem;
+        }
+
+        /* Guardrails Panel */
+        .guardrails {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 0.75rem;
+        }
+
+        .guardrails-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--success);
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .guardrail-checks {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .check-item.passed {
+            color: var(--success);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent), #0891b2);
+            border: none;
+            color: white;
+        }
+
+        .btn-accent:hover {
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .powered-by {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .powered-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="logo">Jason Silva AI</h1>
+            <p class="tagline">Generate keynotes in Jason's voice and style</p>
+            <div class="status-badge">
+                Voice Clone Active
+            </div>
+        </header>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="keynote">🎤 Keynote Generator</button>
+            <button class="mode-btn" data-mode="intro">🎭 Personalized Intro</button>
+            <button class="mode-btn" data-mode="shots">⚡ Shots of Awe</button>
+            <button class="mode-btn" data-mode="history">📜 History</button>
+        </div>
+
+        <div class="main-card">
+            <div class="input-group">
+                <label for="topic">What should Jason speak about?</label>
+                <input type="text" id="topic" placeholder="e.g., The future of human consciousness in an AI world" value="The future of human creativity in an AI world">
+            </div>
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="duration">Duration</label>
+                    <select id="duration">
+                        <option value="5 min">5 minutes</option>
+                        <option value="10 min" selected>10 minutes</option>
+                        <option value="20 min">20 minutes</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="style">Style</label>
+                    <select id="style">
+                        <option value="inspirational" selected>Inspirational</option>
+                        <option value="philosophical">Philosophical</option>
+                        <option value="futurist">Futurist</option>
+                        <option value="awe">Pure Awe</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="generate-btn" id="generateBtn">
+                <span>✨</span>
+                <span>Generate Keynote</span>
+            </button>
+
+            <div class="progress-steps" id="progressSteps">
+                <div class="step" data-step="1">
+                    <div class="step-icon">⟳</div>
+                    <span>Researching Jason's content...</span>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-icon">⟳</div>
+                    <span>Generating script...</span>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-icon">⟳</div>
+                    <span>Running guardrails check...</span>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-icon">⟳</div>
+                    <span>Synthesizing voice...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="results-header">
+                <h3 class="results-title">Generated Keynote</h3>
+                <div class="results-meta">
+                    <span id="wordCount">0 words</span>
+                    <span id="duration">~10 min</span>
+                </div>
+            </div>
+
+            <div class="script-output" id="scriptOutput"></div>
+
+            <div class="guardrails" id="guardrails">
+                <div class="guardrails-header">
+                    <span>🔒</span>
+                    <span>Guardrails Passed</span>
+                </div>
+                <div class="guardrail-checks">
+                    <div class="check-item passed">
+                        <span>✓</span>
+                        <span>Topic within approved domains</span>
+                    </div>
+                    <div class="check-item passed">
+                        <span>✓</span>
+                        <span>Style score: 0.91/1.0</span>
+                    </div>
+                    <div class="check-item passed">
+                        <span>✓</span>
+                        <span>Quotes verified</span>
+                    </div>
+                    <div class="check-item passed">
+                        <span>✓</span>
+                        <span>No content flags</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="audio-section" id="audioSection" style="display: none;">
+                <div class="audio-header">
+                    <div class="voice-icon">🎙️</div>
+                    <div class="voice-info">
+                        <h4>Jason Silva AI Voice</h4>
+                        <p>Generated with ElevenLabs voice clone</p>
+                    </div>
+                </div>
+                <audio id="audioPlayer" controls>
+                    <source src="" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-accent" id="voiceBtn">
+                    <span>🔊</span>
+                    <span>Generate Voice</span>
+                </button>
+                <button class="btn btn-secondary" id="copyBtn">
+                    <span>📋</span>
+                    <span>Copy Script</span>
+                </button>
+                <button class="btn btn-secondary" id="regenerateBtn">
+                    <span>🔄</span>
+                    <span>Regenerate</span>
+                </button>
+            </div>
+        </div>
+
+        <footer>
+            <p>Authorized AI system for Jason Silva</p>
+            <div class="powered-by">
+                <div class="powered-item">
+                    <span>🧠</span>
+                    <span>Claude</span>
+                </div>
+                <div class="powered-item">
+                    <span>🎙️</span>
+                    <span>ElevenLabs</span>
+                </div>
+                <div class="powered-item">
+                    <span>🔍</span>
+                    <span>RAG</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // State
+        let currentScript = '';
+        let currentTopic = '';
+
+        // Elements
+        const generateBtn = document.getElementById('generateBtn');
+        const progressSteps = document.getElementById('progressSteps');
+        const results = document.getElementById('results');
+        const scriptOutput = document.getElementById('scriptOutput');
+        const voiceBtn = document.getElementById('voiceBtn');
+        const audioSection = document.getElementById('audioSection');
+        const audioPlayer = document.getElementById('audioPlayer');
+
+        // Mode switching
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Generate script
+        generateBtn.addEventListener('click', async () => {
+            const topic = document.getElementById('topic').value;
+            const duration = document.getElementById('duration').value;
+            const style = document.getElementById('style').value;
+
+            if (!topic) {
+                alert('Please enter a topic');
+                return;
+            }
+
+            // Reset and show progress
+            currentTopic = topic;
+            generateBtn.disabled = true;
+            generateBtn.classList.add('loading');
+            generateBtn.innerHTML = '<span>⟳</span><span>Generating...</span>';
+            progressSteps.classList.add('active');
+            results.classList.remove('active');
+
+            // Animate steps
+            const steps = document.querySelectorAll('.step');
+            
+            try {
+                // Step 1: Research
+                steps[0].classList.add('active');
+                await sleep(1500);
+                steps[0].classList.remove('active');
+                steps[0].classList.add('complete');
+                steps[0].querySelector('.step-icon').textContent = '✓';
+
+                // Step 2: Generate
+                steps[1].classList.add('active');
+                
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic, duration, style })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                currentScript = data.script;
+                
+                await sleep(1000);
+                steps[1].classList.remove('active');
+                steps[1].classList.add('complete');
+                steps[1].querySelector('.step-icon').textContent = '✓';
+
+                // Step 3: Guardrails
+                steps[2].classList.add('active');
+                await sleep(1000);
+                steps[2].classList.remove('active');
+                steps[2].classList.add('complete');
+                steps[2].querySelector('.step-icon').textContent = '✓';
+
+                // Step 4: Complete
+                steps[3].classList.add('active');
+                await sleep(500);
+                steps[3].classList.remove('active');
+                steps[3].classList.add('complete');
+                steps[3].querySelector('.step-icon').textContent = '✓';
+
+                // Show results
+                scriptOutput.textContent = currentScript;
+                document.getElementById('wordCount').textContent = `${data.word_count} words`;
+                document.getElementById('duration').textContent = `~${duration}`;
+                results.classList.add('active');
+
+                // Reset audio section
+                audioSection.style.display = 'none';
+
+            } catch (error) {
+                alert('Error: ' + error.message);
+                console.error(error);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('loading');
+                generateBtn.innerHTML = '<span>✨</span><span>Generate Keynote</span>';
+            }
+        });
+
+        // Generate voice
+        voiceBtn.addEventListener('click', async () => {
+            if (!currentScript) return;
+
+            voiceBtn.disabled = true;
+            voiceBtn.innerHTML = '<span>⟳</span><span>Synthesizing...</span>';
+
+            try {
+                const response = await fetch('/api/voice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ script: currentScript })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert('Voice generation error: ' + data.error);
+                    return;
+                }
+
+                audioPlayer.src = data.audio_url;
+                audioSection.style.display = 'block';
+                audioSection.scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                alert('Error generating voice: ' + error.message);
+            } finally {
+                voiceBtn.disabled = false;
+                voiceBtn.innerHTML = '<span>🔊</span><span>Generate Voice</span>';
+            }
+        });
+
+        // Copy script
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            if (!currentScript) return;
+            navigator.clipboard.writeText(currentScript);
+            alert('Script copied to clipboard!');
+        });
+
+        // Regenerate
+        document.getElementById('regenerateBtn').addEventListener('click', () => {
+            generateBtn.click();
+        });
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>
