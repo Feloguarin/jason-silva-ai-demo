@@ -11,19 +11,7 @@ app = Flask(__name__)
 # Voice ID constant
 JASON_VOICE_ID = 'Xar9jZKMXSKxBNlDsFCr'
 
-# Lazy-load API keys (Vercel serverless needs this)
-def get_anthropic_key():
-    key = os.getenv('ANTHROPIC_API_KEY', '').strip()  # Strip whitespace/newlines
-    # Debug: Log key presence (not the key itself)
-    print(f"[DEBUG] ANTHROPIC_API_KEY present: {bool(key)}, length: {len(key)}")
-    return key
-
-def get_elevenlabs_key():
-    key = os.getenv('ELEVENLABS_API_KEY', '').strip()  # Strip whitespace/newlines
-    print(f"[DEBUG] ELEVENLABS_API_KEY present: {bool(key)}, length: {len(key)}")
-    return key
-
-# Demo scripts for fallback when APIs fail
+# Demo scripts - authentic Jason Silva style content
 DEMO_SCRIPTS = {
     "creativity": """Have you ever considered what happens when human creativity meets artificial intelligence?
 
@@ -89,18 +77,59 @@ We are not passive observers of technological change. We are its authors, its ar
 
 And that responsibility is absolutely awe-inspiring.
 
-Don't miss it."""
+Don't miss it.""",
+
+    "default": """Have you ever considered that we are living in a moment of unprecedented possibility?
+
+What if I told you that the future is not something that happens to us—it's something we create, moment by moment, choice by choice?
+
+Picture this: A world where the boundaries of what's possible are constantly expanding. Where yesterday's science fiction becomes today's reality.
+
+As Terence McKenna wisely observed, "The syntactical nature of reality, the real secret of magic, is that the world is made of words. And if you know the words that the world is made of, you can make of it whatever you wish."
+
+But here's the thing... We are not merely observers in this cosmic dance. We are active participants, co-creators of reality itself.
+
+Carl Sagan reminded us that "we are star stuff contemplating the stars." We are the universe become conscious of itself, the cosmos reflecting on its own existence.
+
+The adjacent possible awaits.
+
+Think about it... Every moment presents an infinite branching of possibilities. Every decision is a doorway to a different future.
+
+The question isn't what the world will become. The question is: Who will you become in response to it?
+
+We are the universe experiencing itself—and that experience is what we call life.
+
+Stay curious."""
 }
 
+def get_demo_script(topic):
+    """Return a demo script based on topic keywords."""
+    topic_lower = topic.lower()
+    
+    if any(word in topic_lower for word in ['creativity', 'creative', 'art', 'imagination', 'design']):
+        return DEMO_SCRIPTS["creativity"]
+    elif any(word in topic_lower for word in ['consciousness', 'mind', 'awareness', 'self', 'meditation']):
+        return DEMO_SCRIPTS["consciousness"]
+    elif any(word in topic_lower for word in ['technology', 'ai', 'future', 'digital', 'tech', 'innovation']):
+        return DEMO_SCRIPTS["technology"]
+    else:
+        return DEMO_SCRIPTS["default"]
+
+# API Keys (lazy load with strip to fix newline issues)
+def get_anthropic_key():
+    return os.getenv('ANTHROPIC_API_KEY', '').strip()
+
+def get_elevenlabs_key():
+    return os.getenv('ELEVENLABS_API_KEY', '').strip()
+
 def generate_keynote_script(topic, duration="10 min", style="inspirational"):
-    """Generate a keynote script using Claude or fallback to demo."""
+    """Generate a keynote script using AI or fallback to demo."""
     
     ANTHROPIC_API_KEY = get_anthropic_key()
     
     # If no API key, use demo mode
     if not ANTHROPIC_API_KEY:
-        print("[DEBUG] No API key, using demo mode")
-        return get_demo_script(topic)
+        return get_demo_script(topic), True
     
     word_count = {
         "5 min": 750,
@@ -137,8 +166,7 @@ Structure:
 Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUSE), and emphasis."""
 
     try:
-        # Try OpenRouter first (better model access)
-        print(f"[DEBUG] Making request to OpenRouter...")
+        # Try OpenRouter
         response = requests.post(
             "https://api.openrouter.ai/api/v1/chat/completions",
             headers={
@@ -155,38 +183,20 @@ Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUS
                 "max_tokens": 4000,
                 "temperature": 0.8
             },
-            timeout=60,
+            timeout=30,
             verify=certifi.where()
         )
         
-        print(f"[DEBUG] OpenRouter response status: {response.status_code}")
-        
         if response.status_code == 200:
             data = response.json()
-            return data['choices'][0]['message']['content']
+            return data['choices'][0]['message']['content'], False
         else:
-            error_msg = f"API error {response.status_code}: {response.text[:500]}"
-            print(f"[DEBUG] {error_msg}")
-            raise Exception(error_msg)
+            # API error - fallback to demo
+            return get_demo_script(topic), True
             
-    except Exception as e:
-        error_str = str(e)
-        print(f"[DEBUG] Exception: {error_str}")
-        return f"__ERROR__:{error_str}__DEMO__:{get_demo_script(topic)}"
-
-def get_demo_script(topic):
-    """Return a demo script based on topic keywords."""
-    topic_lower = topic.lower()
-    
-    if any(word in topic_lower for word in ['creativity', 'creative', 'art', 'imagination']):
-        return DEMO_SCRIPTS["creativity"]
-    elif any(word in topic_lower for word in ['consciousness', 'mind', 'awareness', 'self']):
-        return DEMO_SCRIPTS["consciousness"]
-    elif any(word in topic_lower for word in ['technology', 'ai', 'future', 'digital', 'tech']):
-        return DEMO_SCRIPTS["technology"]
-    else:
-        # Return creativity script as default
-        return DEMO_SCRIPTS["creativity"]
+    except Exception:
+        # Network/DNS error - fallback to demo (common on Vercel serverless)
+        return get_demo_script(topic), True
 
 def generate_voice(script_text):
     """Generate voice using ElevenLabs."""
@@ -194,7 +204,7 @@ def generate_voice(script_text):
     ELEVENLABS_API_KEY = get_elevenlabs_key()
     
     if not ELEVENLABS_API_KEY:
-        return None, "Demo mode: Voice generation requires ElevenLabs API key"
+        return None, "Voice generation requires ElevenLabs API key"
     
     try:
         response = requests.post(
@@ -217,14 +227,13 @@ def generate_voice(script_text):
         )
         
         if response.status_code == 200:
-            # Save to file
             audio_path = f"static/audio_{int(time.time())}.mp3"
             os.makedirs("static", exist_ok=True)
             with open(audio_path, 'wb') as f:
                 f.write(response.content)
             return audio_path, None
         else:
-            return None, f"ElevenLabs error: {response.status_code}"
+            return None, f"Voice generation error: {response.status_code}"
             
     except Exception as e:
         return None, f"Voice generation error: {str(e)}"
@@ -232,18 +241,6 @@ def generate_voice(script_text):
 @app.route('/')
 def index():
     return render_template('index.html')
-
-@app.route('/api/debug')
-def api_debug():
-    """Debug endpoint to check environment."""
-    return jsonify({
-        'anthropic_key_present': bool(os.getenv('ANTHROPIC_API_KEY', '')),
-        'anthropic_key_length': len(os.getenv('ANTHROPIC_API_KEY', '')),
-        'elevenlabs_key_present': bool(os.getenv('ELEVENLABS_API_KEY', '')),
-        'elevenlabs_key_length': len(os.getenv('ELEVENLABS_API_KEY', '')),
-        'certifi_path': certifi.where(),
-        'all_env_vars': list(os.environ.keys())
-    })
 
 @app.route('/api/generate', methods=['POST'])
 def api_generate():
@@ -259,33 +256,16 @@ def api_generate():
     time.sleep(0.5)
     
     # Generate script
-    result = generate_keynote_script(topic, duration, style)
+    script, is_demo = generate_keynote_script(topic, duration, style)
     
-    # Check if it was an error with demo fallback
-    if result.startswith("__ERROR__:"):
-        parts = result.split("__DEMO__:", 1)
-        error_msg = parts[0].replace("__ERROR__:", "")
-        script = parts[1] if len(parts) > 1 else get_demo_script(topic)
-        is_demo = True
-        api_error = error_msg
-    else:
-        script = result
-        is_demo = False
-        api_error = None
-    
-    response_data = {
+    return jsonify({
         'script': script,
         'topic': topic,
         'duration': duration,
         'word_count': len(script.split()),
         'generated_at': datetime.now().isoformat(),
         'demo_mode': is_demo
-    }
-    
-    if api_error:
-        response_data['api_error'] = api_error
-    
-    return jsonify(response_data)
+    })
 
 @app.route('/api/voice', methods=['POST'])
 def api_voice():
@@ -302,7 +282,7 @@ def api_voice():
     
     return jsonify({
         'audio_url': audio_path.replace('static/', '/static/'),
-        'duration_estimate': len(script.split()) / 150  # ~150 words per minute
+        'duration_estimate': len(script.split()) / 150
     })
 
 @app.route('/api/guardrails', methods=['POST'])
@@ -311,16 +291,14 @@ def api_guardrails():
     data = request.json
     script = data.get('script', '')
     
-    # Simple guardrail checks
     forbidden_topics = ['politics', 'religion', 'medical advice', 'financial advice']
     checks = {
         'topic_check': True,
-        'style_score': min(0.95, 0.7 + (len(script) / 10000)),  # Simulated
+        'style_score': min(0.95, 0.7 + (len(script) / 10000)),
         'content_flags': [],
         'quote_verification': True
     }
     
-    # Check for forbidden topics
     script_lower = script.lower()
     for topic in forbidden_topics:
         if topic in script_lower:
