@@ -1,109 +1,93 @@
-# 🎤 Jason Silva AI Demo — Quick Start
+# Jason Silva AI — Keynote Generator
 
-## Prerequisites
+AI-powered keynote generator that creates content in Jason Silva's voice and style, with voice synthesis using his cloned voice.
 
-- Python 3.8+
-- Anthropic API key (in OpenRouter)
-- ElevenLabs API key with Jason voice clone
-
-## Setup (2 minutes)
-
-```bash
-# 1. Navigate to demo folder
-cd demo-web
-
-# 2. Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Set environment variables
-export ANTHROPIC_API_KEY="your-key-here"
-export ELEVENLABS_API_KEY="your-key-here"
-
-# 5. Run the app
-python app.py
-```
-
-## Access the Demo
-
-Open browser to: **http://localhost:5000**
-
-## Deploy to Production
-
-### Option 1: Vercel (Recommended)
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel --prod
-```
-
-Add environment variables in Vercel dashboard:
-- `ANTHROPIC_API_KEY`
-- `ELEVENLABS_API_KEY`
-
-### Option 2: Render
-
-1. Push code to GitHub
-2. Connect repo to Render
-3. Add environment variables
-4. Deploy
-
-### Option 3: Localtunnel (For Demo Meeting)
-
-```bash
-# Install localtunnel
-npm install -g localtunnel
-
-# Run app
-python app.py &
-
-# Expose to internet
-lt --port 5000
-```
-
-Share the URL with Jordan.
-
-## Demo Flow
-
-1. **Open the app** — Shows "Jason Silva AI" interface
-2. **Enter topic** — "The future of human creativity in an AI world"
-3. **Click Generate** — Shows progress steps
-4. **View script** — Full keynote appears
-5. **Click Generate Voice** — Jason's AI voice plays
-6. **Close the deal**
+**Live Demo:** [demo-web-alpha-six.vercel.app](https://demo-web-alpha-six.vercel.app)
 
 ## Features
 
-- ✅ AI script generation (Claude)
-- ✅ Voice synthesis (ElevenLabs)
-- ✅ Progress visualization
-- ✅ Guardrails display
-- ✅ Audio playback
-- ✅ Copy/regenerate functions
+- **AI Script Generation** — Claude (Anthropic) generates keynote scripts grounded in Jason's actual writings and philosophical frameworks
+- **RAG Knowledge Base** — Scripts are informed by Jason's Substack articles, interviews, and public content (~48k chars of real material)
+- **Voice Synthesis** — ElevenLabs voice clone produces audio in Jason's voice
+- **Guardrails** — Content filtering for approved topics and style consistency
+- **Duration Options** — 1 min, 2 min, or 5 min keynotes
 
-## Troubleshooting
+## Architecture
 
-**Voice not generating?**
-- Check ElevenLabs API key
-- Verify voice ID `Xar9jZKMXSKxBNlDsFCr` exists
-- Check API quota
+```
+User Input (topic, duration, style)
+        │
+        ▼
+  ┌─────────────┐
+  │  Flask App   │
+  │  (app.py)    │
+  └──────┬──────┘
+         │
+    ┌────┴────┐
+    ▼         ▼
+┌────────┐ ┌──────────┐
+│Anthropic│ │ElevenLabs│
+│  API    │ │  API     │
+│(Claude) │ │(Voice)   │
+└────┬────┘ └────┬─────┘
+     │           │
+     ▼           ▼
+  Script      Audio
+  (text)      (MP3)
+```
 
-**Scripts not generating?**
-- Check OpenRouter API key
-- Verify Anthropic credits
+## Tech Stack
 
-## Cost Per Demo
+| Component | Technology |
+|-----------|------------|
+| Backend | Flask (Python) |
+| AI Generation | Anthropic Claude Sonnet |
+| Voice Synthesis | ElevenLabs v2 |
+| Knowledge Base | Embedded RAG (text file) |
+| Deployment | Vercel Serverless |
+| Frontend | Vanilla HTML/CSS/JS |
 
-- Script generation: ~$0.02
-- Voice synthesis: ~$0.05
-- **Total: ~$0.07 per keynote**
+## Environment Variables
 
----
+| Variable | Description |
+|----------|-------------|
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude |
+| `ELEVENLABS_API_KEY` | ElevenLabs API key for voice synthesis |
 
-**Built for the Jordan Silva meeting — February 13, 2026**
+## Project Structure
+
+```
+demo-web/
+├── app.py                      # Flask app (routes + generation logic)
+├── jason_knowledge_base.txt    # RAG knowledge base (Jason's writings)
+├── templates/
+│   └── index.html              # Frontend UI
+├── requirements.txt            # Python dependencies
+├── vercel.json                 # Vercel deployment config
+└── README.md
+```
+
+## Local Development
+
+```bash
+pip install -r requirements.txt
+export ANTHROPIC_API_KEY=your_key
+export ELEVENLABS_API_KEY=your_key
+python app.py
+# → http://localhost:5000
+```
+
+## Deployment
+
+```bash
+vercel --prod
+```
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Web UI |
+| `/api/generate` | POST | Generate keynote script |
+| `/api/voice` | POST | Synthesize voice from script |
+| `/api/guardrails` | POST | Check content against guardrails |
