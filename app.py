@@ -11,6 +11,13 @@ app = Flask(__name__)
 # Voice ID constant
 JASON_VOICE_ID = 'Xar9jZKMXSKxBNlDsFCr'
 
+# Load Jason Silva knowledge base for RAG-enhanced generation
+JASON_KB = ""
+_kb_path = os.path.join(os.path.dirname(__file__), 'jason_knowledge_base.txt')
+if os.path.exists(_kb_path):
+    with open(_kb_path) as _f:
+        JASON_KB = _f.read()
+
 # Demo scripts - authentic Jason Silva style content
 DEMO_SCRIPTS = {
     "creativity": """Have you ever considered what happens when human creativity meets artificial intelligence?
@@ -137,33 +144,46 @@ def generate_keynote_script(topic, duration="10 min", style="inspirational"):
         "5 min": 400
     }.get(duration, 260)
     
-    system_prompt = """You are generating keynote content in the style of Jason Silva.
+    # Build RAG-enhanced system prompt with Jason's actual knowledge
+    kb_section = ""
+    if JASON_KB:
+        kb_section = f"""
+
+JASON SILVA'S ACTUAL WRITINGS AND KNOWLEDGE BASE:
+The following is real content from Jason Silva's Substack, interviews, and public writings.
+Use this to ground your generation in his ACTUAL ideas, vocabulary, and philosophical frameworks.
+Draw specific connections, quotes, and concepts from this material — don't just mimic his style, 
+channel his actual intellectual universe.
+
+{JASON_KB[:15000]}"""
+
+    system_prompt = f"""You are generating keynote content as Jason Silva — not imitating him, but channeling his actual intellectual framework.
 
 Jason Silva's signature characteristics:
-- Opens with wonder/awe ("Have you ever considered...")
+- Opens with wonder/awe ("Have you ever considered...", "What if I told you...")
 - Rapid-fire delivery with strategic pauses
-- Heavy use of quotes (Terence McKenna, Carl Sagan, Alan Watts)
+- References thinkers: Terence McKenna, Carl Sagan, Alan Watts, Carl Jung, Joseph Campbell, Stuart Kauffman, Ray Kurzweil, Buckminster Fuller
 - Builds to emotional crescendo
-- Poetic language, metaphors
-- Topics: consciousness, technology, creativity, awe, mortality, transcendence
-- Uses phrases like "the adjacent possible," "cosmic perspective," "technological singularity"
-- Enthusiastic, breathless energy
+- Poetic, evocative language — "purple prose" that earns its intensity
+- Core themes: consciousness, technology, creativity, awe, mortality, transcendence, flow states, psychedelics, the adjacent possible
+- Uses phrases like "the adjacent possible," "cosmic perspective," "ontological," "metaphysical," "aesthetic arrest," "ecstatic truth"
+- Enthusiastic, breathless energy — like a "philosophical espresso shot"
 - Ends with an inspiring call to wonder
 
-Generate content that sounds authentically like Jason Silva would deliver it."""
+CRITICAL: Generate ONLY the spoken script text. No stage directions, no markdown formatting, no asterisks, no bold text, no headers. Just pure spoken words as Jason would deliver them. Use "..." for pauses instead of [PAUSE] or stage directions.
+{kb_section}"""
 
-    user_prompt = f"""Write a {duration} keynote speech ({word_count} words) on the topic: "{topic}"
+    user_prompt = f"""Write a {duration} keynote monologue (approximately {word_count} words) on the topic: "{topic}"
 
-Make it sound like Jason Silva delivering a "Shots of Awe" episode or TED talk.
+This should sound like Jason Silva delivering a "Shots of Awe" episode.
 
-Structure:
-1. Hook opening (grab attention with wonder)
-2. 2-3 main sections exploring the topic
-3. Include 2-3 philosophical quotes
-4. Build to an emotional crescendo
-5. Close with awe and inspiration
-
-Write it as spoken word, not an essay. Use rhetorical devices, pacing cues (PAUSE), and emphasis."""
+Requirements:
+- Hook opening that grabs with wonder
+- Weave in 2-3 quotes from thinkers Jason actually references
+- Build to an emotional crescendo  
+- Close with awe and inspiration
+- Write as pure spoken word — no formatting, no stage directions
+- If the knowledge base above contains relevant material on this topic, reference and build upon Jason's actual ideas"""
 
     try:
         # Use Anthropic API directly (OpenRouter DNS fails on Vercel)
