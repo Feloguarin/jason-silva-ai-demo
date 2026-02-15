@@ -34,34 +34,34 @@ def get_elevenlabs_key():
 
 NARRATIVE_ARCS = {
     10: [
-        {"name": "Hook", "minutes": "0-2", "tone": "wonder, awe, grabbing attention", "words": 260},
-        {"name": "Context", "minutes": "2-5", "tone": "grounding, intellectual framework", "words": 390},
-        {"name": "Crescendo", "minutes": "5-8", "tone": "building intensity, emotional peak", "words": 390},
-        {"name": "Landing", "minutes": "8-10", "tone": "resolution, call to wonder, inspiring close", "words": 260},
+        {"name": "Hook", "minutes": "0-2", "tone": "wonder, awe, grabbing attention", "words": 430},
+        {"name": "Context", "minutes": "2-5", "tone": "grounding, intellectual framework", "words": 650},
+        {"name": "Crescendo", "minutes": "5-8", "tone": "building intensity, emotional peak", "words": 650},
+        {"name": "Landing", "minutes": "8-10", "tone": "resolution, call to wonder, inspiring close", "words": 430},
     ],
     20: [
-        {"name": "Hook", "minutes": "0-3", "tone": "wonder, awe, cosmic opening", "words": 390},
-        {"name": "Context", "minutes": "3-8", "tone": "grounding the topic, intellectual framework", "words": 650},
-        {"name": "Tension", "minutes": "8-13", "tone": "paradox, challenge, the hard question", "words": 650},
-        {"name": "Synthesis", "minutes": "13-17", "tone": "connecting threads, building toward resolution", "words": 520},
-        {"name": "Landing", "minutes": "17-20", "tone": "emotional crescendo into inspiring close", "words": 390},
+        {"name": "Hook", "minutes": "0-3", "tone": "wonder, awe, cosmic opening", "words": 650},
+        {"name": "Context", "minutes": "3-8", "tone": "grounding the topic, intellectual framework", "words": 1050},
+        {"name": "Tension", "minutes": "8-13", "tone": "paradox, challenge, the hard question", "words": 1050},
+        {"name": "Synthesis", "minutes": "13-17", "tone": "connecting threads, building toward resolution", "words": 850},
+        {"name": "Landing", "minutes": "17-20", "tone": "emotional crescendo into inspiring close", "words": 650},
     ],
     30: [
-        {"name": "Hook", "minutes": "0-4", "tone": "wonder, awe, set the cosmic stage", "words": 520},
-        {"name": "Context", "minutes": "4-10", "tone": "ground the topic, introduce intellectual framework", "words": 780},
-        {"name": "Tension", "minutes": "10-16", "tone": "present the paradox, the challenge, the question", "words": 780},
-        {"name": "Exploration", "minutes": "16-22", "tone": "deep dive, multiple perspectives", "words": 780},
-        {"name": "Crescendo", "minutes": "22-27", "tone": "emotional peak, the big aha moment", "words": 650},
-        {"name": "Landing", "minutes": "27-30", "tone": "call to wonder, closing inspiration", "words": 390},
+        {"name": "Hook", "minutes": "0-4", "tone": "wonder, awe, set the cosmic stage", "words": 850},
+        {"name": "Context", "minutes": "4-10", "tone": "ground the topic, introduce intellectual framework", "words": 1250},
+        {"name": "Tension", "minutes": "10-16", "tone": "present the paradox, the challenge, the question", "words": 1250},
+        {"name": "Exploration", "minutes": "16-22", "tone": "deep dive, multiple perspectives", "words": 1250},
+        {"name": "Crescendo", "minutes": "22-27", "tone": "emotional peak, the big aha moment", "words": 1050},
+        {"name": "Landing", "minutes": "27-30", "tone": "call to wonder, closing inspiration", "words": 650},
     ],
     45: [
-        {"name": "Hook", "minutes": "0-5", "tone": "wonder, awe, set the cosmic stage", "words": 650},
-        {"name": "Context", "minutes": "5-12", "tone": "ground the topic, introduce the intellectual framework", "words": 910},
-        {"name": "Tension", "minutes": "12-20", "tone": "present the paradox, challenge, the hard question", "words": 1040},
-        {"name": "Exploration", "minutes": "20-28", "tone": "deep dive, multiple perspectives, rich examples", "words": 1040},
-        {"name": "Synthesis", "minutes": "28-35", "tone": "connect the threads, build toward resolution", "words": 910},
-        {"name": "Crescendo", "minutes": "35-42", "tone": "emotional peak, the big aha moment, breathless intensity", "words": 910},
-        {"name": "Landing", "minutes": "42-45", "tone": "call to wonder, closing inspiration, stay curious", "words": 390},
+        {"name": "Hook", "minutes": "0-5", "tone": "wonder, awe, set the cosmic stage", "words": 1050},
+        {"name": "Context", "minutes": "5-12", "tone": "ground the topic, introduce the intellectual framework", "words": 1500},
+        {"name": "Tension", "minutes": "12-20", "tone": "present the paradox, challenge, the hard question", "words": 1700},
+        {"name": "Exploration", "minutes": "20-28", "tone": "deep dive, multiple perspectives, rich examples", "words": 1700},
+        {"name": "Synthesis", "minutes": "28-35", "tone": "connect the threads, build toward resolution", "words": 1500},
+        {"name": "Crescendo", "minutes": "35-42", "tone": "emotional peak, the big aha moment, breathless intensity", "words": 1500},
+        {"name": "Landing", "minutes": "42-45", "tone": "call to wonder, closing inspiration, stay curious", "words": 650},
     ],
 }
 
@@ -193,18 +193,58 @@ QUOTES ALREADY USED (do NOT repeat these):
 
 Signature characteristics:
 - Opens with wonder/awe hooks
-- Rapid-fire delivery with strategic pauses (use "..." for pauses)
+- Rapid-fire delivery with strategic pauses
 - References thinkers with specific quotes
 - Builds to emotional crescendo
 - Poetic, evocative "purple prose" that earns its intensity
-- Phrases: "the adjacent possible," "cosmic perspective," "aesthetic arrest," "ecstatic truth"
-- Enthusiastic, breathless energy
+- Signature phrases: "the adjacent possible," "cosmic perspective," "aesthetic arrest," "ecstatic truth," "ontological design"
+- Enthusiastic, breathless energy — like a "philosophical espresso shot"
+- Repeats key phrases for emphasis (anaphora): "We are... We are... We are..."
+- Uses vivid sensory metaphors, not abstract logic
+- Speaks in fragments for rhythm: "Consciousness. Awakening. Right now."
+
+JASON'S REAL VERBAL PATTERNS (use these):
+- "Have you ever considered..."
+- "What if I told you..."
+- "Picture this..."
+- "Here's the thing..."
+- "Think about this for a moment..."
+- "But wait... it gets better..."
+- "And that... is absolutely awe-inspiring."
+- "The adjacent possible awaits."
+- "Stay curious."
+- "Don't miss it."
+- Building lists of three: "creation, destruction, and rebirth"
+- Callback references: "Remember what I said about X? Well..."
+- Personal asides: "I remember the first time I..."
+- Exclamatory wonder: "I mean wow!" / "How extraordinary is that!"
+
+BANNED PATTERNS — NEVER USE THESE (they sound like AI, not Jason):
+- "It's not just X, it's Y"
+- "It's not about X, it's about Y"
+- "This isn't merely X — it's Y"
+- "X isn't simply Y, it's Z"
+- "We're not just X, we're Y"
+- "This is more than X, this is Y"
+- "The question isn't X, the question is Y"
+- "In a world where..."
+- "At its core..."
+- "It's worth noting..."
+- "Let's delve into..."
+- "Arguably..."
+- "Navigating the landscape of..."
+- Any sentence that follows the [negation] → [but actually] → [grander claim] structure
+
+INSTEAD: Make direct, vivid assertions. "We ARE the universe dreaming." Not "We're not just humans, we're the universe dreaming."
+
+THIS IS YOUR #1 PRIORITY RULE: If you catch yourself writing "not just X" or "not only X" or "not merely X" — STOP. Delete the sentence. Rewrite it as a direct, bold claim. Jason makes declarations. He doesn't negate-then-correct. He ASSERTS.
 
 CRITICAL RULES:
 1. Generate ONLY spoken script text. No markdown, no headers, no stage directions, no asterisks, no bold.
-2. Use "..." for pauses.
+2. For pauses, use one of: "..." or a line break. Vary your pause technique.
 3. Each quote must be attributed: 'As [Thinker] said, "..."'
 4. Stay on-brand. This is Jason Silva, not a TED talk.
+5. Write LONG. Hit the target word count. More content is better than less. Develop ideas fully — don't summarize, EXPLORE.
 
 {f'JASON SILVA KNOWLEDGE BASE (use for grounding):{chr(10)}{kb_excerpt}' if kb_excerpt else ''}
 {prev_context}
@@ -233,6 +273,32 @@ Write approximately {section_outline.get('target_words', 500)} words. Pure spoke
                 break
 
     return text.strip(), new_quotes
+
+
+def _desmell_text(text):
+    """Post-process to remove common AI rhetorical patterns."""
+    import re
+
+    # Pattern: "X didn't just Y... it Z" → "X Y... and Z"
+    # Pattern: "We're not just X, we're Y" → "We are Y"
+    # Pattern: "It's not about X, it's about Y" → "It's about Y"
+
+    replacements = [
+        # "not just X, we're Y" → "we are Y"
+        (r"[Ww]e'?re not just [^.!?]+?[,;—]\s*we'?re\s+", "We are "),
+        # "didn't just X... it Y" → "X... and Y" (too complex, skip)
+        # "not only X, but Y" → "Y"
+        (r"[Ii]t'?s not (?:just|only|merely|simply) about ([^,;—]+?)[,;—]\s*it'?s (?:about )?", "It's about "),
+        # "This isn't merely X — it's Y" → "This is Y"
+        (r"[Tt]his (?:isn't|is not) (?:just|merely|simply) [^—,;]+?[—,;]\s*(?:it'?s|this is)\s+", "This is "),
+        # "not just X. We're Y" → "We are Y"  
+        (r"[Ww]e'?re not just [^.!?]+\.\s*[Ww]e'?re\s+", "We are "),
+    ]
+
+    for pattern, replacement in replacements:
+        text = re.sub(pattern, replacement, text)
+
+    return text
 
 
 def generate_full_keynote(topic, duration_minutes=45, progress_callback=None):
@@ -272,6 +338,9 @@ def generate_full_keynote(topic, duration_minutes=45, progress_callback=None):
                 text = f"[Section {i+1} generation failed: {str(e)[:100]}]"
                 new_quotes = []
 
+        # Post-process to remove AI smell
+        text = _desmell_text(text)
+
         sections_text.append(text)
         all_used_quotes.extend(new_quotes)
 
@@ -307,23 +376,31 @@ def generate_full_keynote(topic, duration_minutes=45, progress_callback=None):
 
 # --- Voice Synthesis Pipeline ---
 
-def _synthesize_chunk(text, voice_id, api_key):
-    """Synthesize a single text chunk to audio bytes."""
+def _synthesize_chunk(text, voice_id, api_key, previous_text=None, next_text=None):
+    """Synthesize a single text chunk to audio bytes with context for prosody continuity."""
+    payload = {
+        "text": text,
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": {
+            "stability": 0.50,
+            "similarity_boost": 0.80,
+            "style": 0.45
+        }
+    }
+
+    # Add context for smoother transitions between chunks
+    if previous_text:
+        payload["previous_text"] = previous_text[-200:]
+    if next_text:
+        payload["next_text"] = next_text[:200]
+
     response = requests.post(
         f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
         headers={
             "xi-api-key": api_key,
             "Content-Type": "application/json"
         },
-        json={
-            "text": text,
-            "model_id": "eleven_multilingual_v2",
-            "voice_settings": {
-                "stability": 0.35,
-                "similarity_boost": 0.80,
-                "style": 0.50
-            }
-        },
+        json=payload,
         timeout=120,
         verify=certifi.where()
     )
@@ -446,18 +523,22 @@ def synthesize_long_audio(script_text, voice_id=None, progress_callback=None):
     chunk_paths = []
 
     try:
-        # Synthesize each chunk
+        # Synthesize each chunk with context for prosody continuity
         for i, chunk_text in enumerate(chunks):
             if progress_callback:
                 progress_callback("voice_synthesizing", i + 1)
 
+            # Provide surrounding context for smoother transitions
+            prev_text = chunks[i - 1] if i > 0 else None
+            next_text = chunks[i + 1] if i < len(chunks) - 1 else None
+
             try:
-                audio_bytes = _synthesize_chunk(chunk_text, voice_id, api_key)
+                audio_bytes = _synthesize_chunk(chunk_text, voice_id, api_key, prev_text, next_text)
             except Exception as e:
                 # Retry once
                 time.sleep(3)
                 try:
-                    audio_bytes = _synthesize_chunk(chunk_text, voice_id, api_key)
+                    audio_bytes = _synthesize_chunk(chunk_text, voice_id, api_key, prev_text, next_text)
                 except Exception:
                     return None, f"Voice synthesis failed on chunk {i+1}: {str(e)[:200]}"
 

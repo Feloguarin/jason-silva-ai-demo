@@ -239,9 +239,9 @@ def generate_voice(script_text):
                 "text": script_text[:5000],  # ElevenLabs limit
                 "model_id": "eleven_multilingual_v2",
                 "voice_settings": {
-                    "stability": 0.35,
+                    "stability": 0.50,
                     "similarity_boost": 0.80,
-                    "style": 0.50
+                    "style": 0.45
                 }
             },
             timeout=120,
