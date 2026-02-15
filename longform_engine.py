@@ -32,36 +32,37 @@ def get_elevenlabs_key():
 
 # --- Narrative Arc Definitions ---
 
+# Word targets calibrated at ~210 wpm (Jason's energetic delivery + ElevenLabs pacing)
 NARRATIVE_ARCS = {
     10: [
-        {"name": "Hook", "minutes": "0-2", "tone": "wonder, awe, grabbing attention", "words": 430},
-        {"name": "Context", "minutes": "2-5", "tone": "grounding, intellectual framework", "words": 650},
-        {"name": "Crescendo", "minutes": "5-8", "tone": "building intensity, emotional peak", "words": 650},
-        {"name": "Landing", "minutes": "8-10", "tone": "resolution, call to wonder, inspiring close", "words": 430},
+        {"name": "Hook", "minutes": "0-2", "tone": "wonder, awe, grabbing attention", "words": 420},
+        {"name": "Context", "minutes": "2-5", "tone": "grounding, intellectual framework", "words": 630},
+        {"name": "Crescendo", "minutes": "5-8", "tone": "building intensity, emotional peak", "words": 630},
+        {"name": "Landing", "minutes": "8-10", "tone": "resolution, call to wonder, inspiring close", "words": 420},
     ],
     20: [
-        {"name": "Hook", "minutes": "0-3", "tone": "wonder, awe, cosmic opening", "words": 650},
+        {"name": "Hook", "minutes": "0-3", "tone": "wonder, awe, cosmic opening", "words": 630},
         {"name": "Context", "minutes": "3-8", "tone": "grounding the topic, intellectual framework", "words": 1050},
         {"name": "Tension", "minutes": "8-13", "tone": "paradox, challenge, the hard question", "words": 1050},
-        {"name": "Synthesis", "minutes": "13-17", "tone": "connecting threads, building toward resolution", "words": 850},
-        {"name": "Landing", "minutes": "17-20", "tone": "emotional crescendo into inspiring close", "words": 650},
+        {"name": "Synthesis", "minutes": "13-17", "tone": "connecting threads, building toward resolution", "words": 840},
+        {"name": "Landing", "minutes": "17-20", "tone": "emotional crescendo into inspiring close", "words": 630},
     ],
     30: [
-        {"name": "Hook", "minutes": "0-4", "tone": "wonder, awe, set the cosmic stage", "words": 850},
-        {"name": "Context", "minutes": "4-10", "tone": "ground the topic, introduce intellectual framework", "words": 1250},
-        {"name": "Tension", "minutes": "10-16", "tone": "present the paradox, the challenge, the question", "words": 1250},
-        {"name": "Exploration", "minutes": "16-22", "tone": "deep dive, multiple perspectives", "words": 1250},
+        {"name": "Hook", "minutes": "0-4", "tone": "wonder, awe, set the cosmic stage", "words": 840},
+        {"name": "Context", "minutes": "4-10", "tone": "ground the topic, introduce intellectual framework", "words": 1260},
+        {"name": "Tension", "minutes": "10-16", "tone": "present the paradox, the challenge, the question", "words": 1260},
+        {"name": "Exploration", "minutes": "16-22", "tone": "deep dive, multiple perspectives", "words": 1260},
         {"name": "Crescendo", "minutes": "22-27", "tone": "emotional peak, the big aha moment", "words": 1050},
-        {"name": "Landing", "minutes": "27-30", "tone": "call to wonder, closing inspiration", "words": 650},
+        {"name": "Landing", "minutes": "27-30", "tone": "call to wonder, closing inspiration", "words": 630},
     ],
     45: [
         {"name": "Hook", "minutes": "0-5", "tone": "wonder, awe, set the cosmic stage", "words": 1050},
-        {"name": "Context", "minutes": "5-12", "tone": "ground the topic, introduce the intellectual framework", "words": 1500},
-        {"name": "Tension", "minutes": "12-20", "tone": "present the paradox, challenge, the hard question", "words": 1700},
-        {"name": "Exploration", "minutes": "20-28", "tone": "deep dive, multiple perspectives, rich examples", "words": 1700},
-        {"name": "Synthesis", "minutes": "28-35", "tone": "connect the threads, build toward resolution", "words": 1500},
-        {"name": "Crescendo", "minutes": "35-42", "tone": "emotional peak, the big aha moment, breathless intensity", "words": 1500},
-        {"name": "Landing", "minutes": "42-45", "tone": "call to wonder, closing inspiration, stay curious", "words": 650},
+        {"name": "Context", "minutes": "5-12", "tone": "ground the topic, introduce the intellectual framework", "words": 1470},
+        {"name": "Tension", "minutes": "12-20", "tone": "present the paradox, challenge, the hard question", "words": 1680},
+        {"name": "Exploration", "minutes": "20-28", "tone": "deep dive, multiple perspectives, rich examples", "words": 1680},
+        {"name": "Synthesis", "minutes": "28-35", "tone": "connect the threads, build toward resolution", "words": 1470},
+        {"name": "Crescendo", "minutes": "35-42", "tone": "emotional peak, the big aha moment, breathless intensity", "words": 1470},
+        {"name": "Landing", "minutes": "42-45", "tone": "call to wonder, closing inspiration, stay curious", "words": 630},
     ],
 }
 
@@ -279,20 +280,23 @@ def _desmell_text(text):
     """Post-process to remove common AI rhetorical patterns."""
     import re
 
-    # Pattern: "X didn't just Y... it Z" → "X Y... and Z"
-    # Pattern: "We're not just X, we're Y" → "We are Y"
-    # Pattern: "It's not about X, it's about Y" → "It's about Y"
-
     replacements = [
-        # "not just X, we're Y" → "we are Y"
-        (r"[Ww]e'?re not just [^.!?]+?[,;—]\s*we'?re\s+", "We are "),
-        # "didn't just X... it Y" → "X... and Y" (too complex, skip)
-        # "not only X, but Y" → "Y"
-        (r"[Ii]t'?s not (?:just|only|merely|simply) about ([^,;—]+?)[,;—]\s*it'?s (?:about )?", "It's about "),
+        # "X isn't just Y — it's Z" → "X is Z"
+        (r"(\w+) (?:isn't|is not|aren't|are not) (?:just|only|merely|simply) [^—,;.!?]+?[—,;]\s*(?:it'?s|they'?re|this is|that'?s)\s+", r"\1 is "),
+        # "not just X, we're Y" → "We are Y"
+        (r"[Ww]e'?re not (?:just|only|merely|simply) [^.!?]+?[,;—]\s*we'?re\s+", "We are "),
+        # "not just X. We're Y" → "We are Y"
+        (r"[Ww]e'?re not (?:just|only|merely|simply) [^.!?]+\.\s*[Ww]e'?re\s+", "We are "),
+        # "It's not just/only about X, it's about Y" → "It's about Y"
+        (r"[Ii]t'?s not (?:just|only|merely|simply) (?:about )?[^,;—]+?[,;—]\s*it'?s (?:about )?", "It's about "),
         # "This isn't merely X — it's Y" → "This is Y"
         (r"[Tt]his (?:isn't|is not) (?:just|merely|simply) [^—,;]+?[—,;]\s*(?:it'?s|this is)\s+", "This is "),
-        # "not just X. We're Y" → "We are Y"  
-        (r"[Ww]e'?re not just [^.!?]+\.\s*[Ww]e'?re\s+", "We are "),
+        # "not just the X, not just the Y" → "the X, the Y" (list patterns)
+        (r"[Nn]ot just (the [^,]+), not just (the [^,]+)", r"\1, \2"),
+        # "creativity isn't just about X — it's about Y" → "creativity is about Y"
+        (r"(\w+) (?:isn't|is not) (?:just|only|merely) about [^—,;]+?[—,;]\s*(?:it'?s|that'?s) (?:about )?", r"\1 is about "),
+        # Catch remaining "not just" with dash/comma patterns
+        (r"(?:isn't|is not|aren't|are not) (?:just|only|merely) ([^—,;.!?]+?)\s*[—]\s*(?:it'?s|they'?re|we'?re)\s+", r"is \1. It is "),
     ]
 
     for pattern, replacement in replacements:
