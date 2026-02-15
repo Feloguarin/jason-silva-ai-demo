@@ -497,6 +497,10 @@
                         <option value="1 min">1 minute</option>
                         <option value="2 min" selected>2 minutes</option>
                         <option value="5 min">5 minutes</option>
+                        <option value="10 min">10 minutes</option>
+                        <option value="20 min">20 minutes</option>
+                        <option value="30 min">30 minutes</option>
+                        <option value="45 min">45 minutes</option>
                     </select>
                 </div>
                 <div class="input-group">
@@ -642,11 +646,22 @@
             });
         });
 
+        // Check if duration is long-form (10+ min)
+        function isLongForm(duration) {
+            const mins = parseInt(duration);
+            return mins >= 10;
+        }
+
+        function getDurationMinutes(duration) {
+            return parseInt(duration);
+        }
+
         // Generate script
         generateBtn.addEventListener('click', async () => {
             const topic = document.getElementById('topic').value;
             const duration = document.getElementById('duration').value;
             const style = document.getElementById('style').value;
+            const longForm = isLongForm(duration);
 
             if (!topic) {
                 alert('Please enter a topic');
@@ -657,7 +672,9 @@
             currentTopic = topic;
             generateBtn.disabled = true;
             generateBtn.classList.add('loading');
-            generateBtn.innerHTML = '<span>⟳</span><span>Generating...</span>';
+            generateBtn.innerHTML = longForm 
+                ? '<span>⟳</span><span>Generating long-form keynote... this takes a minute</span>'
+                : '<span>⟳</span><span>Generating...</span>';
             progressSteps.classList.add('active');
             results.classList.remove('active');
 
@@ -667,6 +684,8 @@
             try {
                 // Step 1: Research
                 steps[0].classList.add('active');
+                steps[0].querySelector('span:last-child').textContent = longForm 
+                    ? 'Building narrative outline...' : 'Researching Jason\'s content...';
                 await sleep(1500);
                 steps[0].classList.remove('active');
                 steps[0].classList.add('complete');
@@ -674,14 +693,30 @@
 
                 // Step 2: Generate
                 steps[1].classList.add('active');
-                
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ topic, duration, style })
-                });
+                steps[1].querySelector('span:last-child').textContent = longForm
+                    ? 'Generating sections (this takes a moment)...' : 'Generating script...';
 
-                const data = await response.json();
+                let response, data;
+
+                if (longForm) {
+                    response = await fetch('/api/generate-longform', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            topic, 
+                            duration_minutes: getDurationMinutes(duration),
+                            style 
+                        })
+                    });
+                } else {
+                    response = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ topic, duration, style })
+                    });
+                }
+
+                data = await response.json();
                 
                 if (data.error) {
                     throw new Error(data.error);
@@ -689,7 +724,6 @@
 
                 currentScript = data.script;
                 
-                await sleep(1000);
                 steps[1].classList.remove('active');
                 steps[1].classList.add('complete');
                 steps[1].querySelector('.step-icon').textContent = '✓';
@@ -710,8 +744,12 @@
 
                 // Show results
                 scriptOutput.textContent = currentScript;
-                document.getElementById('wordCount').textContent = `${data.word_count} words`;
-                document.getElementById('duration').textContent = `~${duration}`;
+                const wordCount = data.word_count;
+                const estDuration = data.estimated_duration || duration;
+                document.getElementById('wordCount').textContent = `${wordCount} words`;
+                document.getElementById('duration').textContent = longForm 
+                    ? `~${estDuration} min (${data.sections_count} sections)` 
+                    : `~${duration}`;
                 results.classList.add('active');
 
                 // Reset audio section
@@ -731,11 +769,17 @@
         voiceBtn.addEventListener('click', async () => {
             if (!currentScript) return;
 
+            const duration = document.getElementById('duration').value;
+            const longForm = isLongForm(duration);
+
             voiceBtn.disabled = true;
-            voiceBtn.innerHTML = '<span>⟳</span><span>Synthesizing...</span>';
+            voiceBtn.innerHTML = longForm
+                ? '<span>⟳</span><span>Synthesizing long-form audio... this takes several minutes</span>'
+                : '<span>⟳</span><span>Synthesizing...</span>';
 
             try {
-                const response = await fetch('/api/voice', {
+                const endpoint = longForm ? '/api/voice-longform' : '/api/voice';
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ script: currentScript })
@@ -755,6 +799,13 @@
                     audioPlayer.src = data.audio_url;
                 }
                 audioSection.style.display = 'block';
+
+                // Update voice info for long-form
+                if (longForm && data.chunks_count) {
+                    document.querySelector('.voice-info p').textContent = 
+                        `Generated with ElevenLabs voice clone (${data.chunks_count} chunks stitched)`;
+                }
+
                 audioSection.scrollIntoView({ behavior: 'smooth' });
 
             } catch (error) {

@@ -306,6 +306,57 @@ def api_voice():
         'duration_estimate': len(script.split()) / 130
     })
 
+@app.route('/api/generate-longform', methods=['POST'])
+def api_generate_longform():
+    """Generate a long-form keynote (10-45 min)."""
+    from longform_engine import generate_full_keynote
+
+    data = request.json
+    topic = data.get('topic', '')
+    duration = data.get('duration_minutes', 45)
+
+    if not topic:
+        return jsonify({'error': 'Topic required'}), 400
+
+    duration = max(10, min(45, int(duration)))
+
+    try:
+        result = generate_full_keynote(topic, duration)
+        return jsonify({
+            'script': result['script'],
+            'topic': result['topic'],
+            'duration_minutes': result['duration_minutes'],
+            'word_count': result['word_count'],
+            'estimated_duration': result['estimated_duration'],
+            'sections_count': result['sections_count'],
+            'sections': result['sections'],
+            'quotes_used': result['quotes_used'],
+            'generated_at': result['generated_at'],
+            'demo_mode': False
+        })
+    except Exception as e:
+        return jsonify({'error': f'Long-form generation failed: {str(e)[:300]}'}), 500
+
+
+@app.route('/api/voice-longform', methods=['POST'])
+def api_voice_longform():
+    """Generate voice for long-form script with chunked synthesis."""
+    from longform_engine import synthesize_long_audio
+
+    data = request.json
+    script = data.get('script', '')
+
+    if not script:
+        return jsonify({'error': 'Script required'}), 400
+
+    audio_result, error = synthesize_long_audio(script)
+
+    if error:
+        return jsonify({'error': error}), 500
+
+    return jsonify(audio_result)
+
+
 @app.route('/api/guardrails', methods=['POST'])
 def api_guardrails():
     """Check content against guardrails."""
