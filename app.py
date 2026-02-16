@@ -306,10 +306,10 @@ def api_voice():
         'duration_estimate': len(script.split()) / 130
     })
 
-@app.route('/api/generate-longform', methods=['POST'])
-def api_generate_longform():
-    """Generate a long-form keynote (10-45 min)."""
-    from longform_engine import generate_full_keynote
+@app.route('/api/longform/outline', methods=['POST'])
+def api_longform_outline():
+    """Step 1: Generate outline only. Single API call, fast."""
+    from longform_engine import generate_outline
 
     data = request.json
     topic = data.get('topic', '')
@@ -321,40 +321,89 @@ def api_generate_longform():
     duration = max(10, min(45, int(duration)))
 
     try:
-        result = generate_full_keynote(topic, duration)
-        return jsonify({
-            'script': result['script'],
-            'topic': result['topic'],
-            'duration_minutes': result['duration_minutes'],
-            'word_count': result['word_count'],
-            'estimated_duration': result['estimated_duration'],
-            'sections_count': result['sections_count'],
-            'sections': result['sections'],
-            'quotes_used': result['quotes_used'],
-            'generated_at': result['generated_at'],
-            'demo_mode': False
-        })
+        outline = generate_outline(topic, duration)
+        return jsonify(outline)
     except Exception as e:
-        return jsonify({'error': f'Long-form generation failed: {str(e)[:300]}'}), 500
+        return jsonify({'error': f'Outline generation failed: {str(e)[:300]}'}), 500
 
 
-@app.route('/api/voice-longform', methods=['POST'])
-def api_voice_longform():
-    """Generate voice for long-form script with chunked synthesis."""
-    from longform_engine import synthesize_long_audio
+@app.route('/api/longform/section', methods=['POST'])
+def api_longform_section():
+    """Step 2: Generate one section. Single API call per section."""
+    from longform_engine import generate_section, _desmell_text
 
     data = request.json
-    script = data.get('script', '')
+    section_outline = data.get('section_outline', {})
+    previous_summaries = data.get('previous_summaries', [])
+    used_quotes = data.get('used_quotes', [])
+    topic = data.get('topic', '')
 
-    if not script:
-        return jsonify({'error': 'Script required'}), 400
+    if not topic or not section_outline:
+        return jsonify({'error': 'Topic and section_outline required'}), 400
 
-    audio_result, error = synthesize_long_audio(script)
+    try:
+        text, new_quotes = generate_section(
+            section_outline, previous_summaries, used_quotes, topic
+        )
+        text = _desmell_text(text)
 
-    if error:
-        return jsonify({'error': error}), 500
+        words = text.split()
+        summary = f"Section {section_outline.get('section_number', '?')} ({section_outline.get('name', '')}): {' '.join(words[:50])}..."
 
-    return jsonify(audio_result)
+        return jsonify({
+            'text': text,
+            'new_quotes': new_quotes,
+            'summary': summary,
+            'word_count': len(words)
+        })
+    except Exception as e:
+        return jsonify({'error': f'Section generation failed: {str(e)[:300]}'}), 500
+
+
+@app.route('/api/voice/chunk', methods=['POST'])
+def api_voice_chunk():
+    """Generate voice for a single text chunk. One ElevenLabs call."""
+    from longform_engine import _synthesize_chunk, get_elevenlabs_key, JASON_VOICE_ID
+
+    data = request.json
+    text = data.get('text', '')
+    previous_text = data.get('previous_text', None)
+    next_text = data.get('next_text', None)
+
+    if not text:
+        return jsonify({'error': 'Text required'}), 400
+
+    api_key = get_elevenlabs_key()
+    if not api_key:
+        return jsonify({'error': 'ElevenLabs API key not configured'}), 500
+
+    try:
+        audio_bytes = _synthesize_chunk(text, JASON_VOICE_ID, api_key, previous_text, next_text)
+        audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+        return jsonify({
+            'audio_base64': audio_b64,
+            'audio_mime': 'audio/mpeg'
+        })
+    except Exception as e:
+        return jsonify({'error': f'Voice synthesis failed: {str(e)[:200]}'}), 500
+
+
+@app.route('/api/voice/split', methods=['POST'])
+def api_voice_split():
+    """Split script text into chunks for sequential voice synthesis."""
+    from longform_engine import _split_into_chunks
+
+    data = request.json
+    text = data.get('text', '')
+
+    if not text:
+        return jsonify({'error': 'Text required'}), 400
+
+    chunks = _split_into_chunks(text, max_chars=4500)
+    return jsonify({
+        'chunks': chunks,
+        'count': len(chunks)
+    })
 
 
 @app.route('/api/guardrails', methods=['POST'])

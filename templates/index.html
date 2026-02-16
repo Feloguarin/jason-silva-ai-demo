@@ -656,6 +656,79 @@
             return parseInt(duration);
         }
 
+        function setStep(steps, idx, status, text) {
+            if (text) steps[idx].querySelector('span:last-child').textContent = text;
+            steps[idx].classList.remove('active', 'complete');
+            if (status === 'active') steps[idx].classList.add('active');
+            if (status === 'complete') {
+                steps[idx].classList.add('complete');
+                steps[idx].querySelector('.step-icon').textContent = '✓';
+            }
+        }
+
+        // Long-form generation: outline → section by section
+        async function generateLongForm(topic, durationMinutes) {
+            const steps = document.querySelectorAll('.step');
+
+            // Step 1: Generate outline
+            setStep(steps, 0, 'active', 'Building narrative outline...');
+            const outlineRes = await fetch('/api/longform/outline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic, duration_minutes: durationMinutes })
+            });
+            const outline = await outlineRes.json();
+            if (outline.error) throw new Error(outline.error);
+            setStep(steps, 0, 'complete');
+
+            // Step 2: Generate sections one by one
+            const sections = outline.sections;
+            let allText = [];
+            let previousSummaries = [];
+            let usedQuotes = [];
+            let totalWords = 0;
+
+            for (let i = 0; i < sections.length; i++) {
+                setStep(steps, 1, 'active', `Writing section ${i + 1} of ${sections.length}...`);
+                
+                const secRes = await fetch('/api/longform/section', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        topic,
+                        section_outline: sections[i],
+                        previous_summaries: previousSummaries,
+                        used_quotes: usedQuotes
+                    })
+                });
+                const secData = await secRes.json();
+                if (secData.error) throw new Error(secData.error);
+
+                allText.push(secData.text);
+                previousSummaries.push(secData.summary);
+                usedQuotes = usedQuotes.concat(secData.new_quotes || []);
+                totalWords += secData.word_count;
+            }
+            setStep(steps, 1, 'complete', `All ${sections.length} sections complete`);
+
+            // Step 3: Guardrails
+            setStep(steps, 2, 'active');
+            await sleep(500);
+            setStep(steps, 2, 'complete');
+
+            // Step 4: Done
+            setStep(steps, 3, 'active');
+            await sleep(300);
+            setStep(steps, 3, 'complete');
+
+            return {
+                script: allText.join('\n\n'),
+                word_count: totalWords,
+                estimated_duration: Math.round(totalWords / 130 * 10) / 10,
+                sections_count: sections.length
+            };
+        }
+
         // Generate script
         generateBtn.addEventListener('click', async () => {
             const topic = document.getElementById('topic').value;
@@ -673,83 +746,52 @@
             generateBtn.disabled = true;
             generateBtn.classList.add('loading');
             generateBtn.innerHTML = longForm 
-                ? '<span>⟳</span><span>Generating long-form keynote... this takes a minute</span>'
+                ? '<span>⟳</span><span>Generating long-form keynote...</span>'
                 : '<span>⟳</span><span>Generating...</span>';
             progressSteps.classList.add('active');
             results.classList.remove('active');
 
-            // Animate steps
             const steps = document.querySelectorAll('.step');
+            // Reset all steps
+            steps.forEach(s => { s.classList.remove('active', 'complete'); s.querySelector('.step-icon').textContent = '⟳'; });
             
             try {
-                // Step 1: Research
-                steps[0].classList.add('active');
-                steps[0].querySelector('span:last-child').textContent = longForm 
-                    ? 'Building narrative outline...' : 'Researching Jason\'s content...';
-                await sleep(1500);
-                steps[0].classList.remove('active');
-                steps[0].classList.add('complete');
-                steps[0].querySelector('.step-icon').textContent = '✓';
-
-                // Step 2: Generate
-                steps[1].classList.add('active');
-                steps[1].querySelector('span:last-child').textContent = longForm
-                    ? 'Generating sections (this takes a moment)...' : 'Generating script...';
-
-                let response, data;
+                let data;
 
                 if (longForm) {
-                    response = await fetch('/api/generate-longform', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            topic, 
-                            duration_minutes: getDurationMinutes(duration),
-                            style 
-                        })
-                    });
+                    data = await generateLongForm(topic, getDurationMinutes(duration));
                 } else {
-                    response = await fetch('/api/generate', {
+                    // Short-form: single request
+                    setStep(steps, 0, 'active', 'Researching Jason\'s content...');
+                    await sleep(1500);
+                    setStep(steps, 0, 'complete');
+
+                    setStep(steps, 1, 'active', 'Generating script...');
+                    const response = await fetch('/api/generate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ topic, duration, style })
                     });
-                }
+                    data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    setStep(steps, 1, 'complete');
 
-                data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error);
+                    setStep(steps, 2, 'active');
+                    await sleep(1000);
+                    setStep(steps, 2, 'complete');
+
+                    setStep(steps, 3, 'active');
+                    await sleep(500);
+                    setStep(steps, 3, 'complete');
                 }
 
                 currentScript = data.script;
-                
-                steps[1].classList.remove('active');
-                steps[1].classList.add('complete');
-                steps[1].querySelector('.step-icon').textContent = '✓';
-
-                // Step 3: Guardrails
-                steps[2].classList.add('active');
-                await sleep(1000);
-                steps[2].classList.remove('active');
-                steps[2].classList.add('complete');
-                steps[2].querySelector('.step-icon').textContent = '✓';
-
-                // Step 4: Complete
-                steps[3].classList.add('active');
-                await sleep(500);
-                steps[3].classList.remove('active');
-                steps[3].classList.add('complete');
-                steps[3].querySelector('.step-icon').textContent = '✓';
 
                 // Show results
                 scriptOutput.textContent = currentScript;
                 const wordCount = data.word_count;
                 const estDuration = data.estimated_duration || duration;
                 document.getElementById('wordCount').textContent = `${wordCount} words`;
-                document.getElementById('duration').textContent = longForm 
-                    ? `~${estDuration} min (${data.sections_count} sections)` 
-                    : `~${duration}`;
                 results.classList.add('active');
 
                 // Reset audio section
@@ -765,7 +807,7 @@
             }
         });
 
-        // Generate voice
+        // Generate voice — chunked for long-form, single call for short
         voiceBtn.addEventListener('click', async () => {
             if (!currentScript) return;
 
@@ -773,43 +815,85 @@
             const longForm = isLongForm(duration);
 
             voiceBtn.disabled = true;
-            voiceBtn.innerHTML = longForm
-                ? '<span>⟳</span><span>Synthesizing long-form audio... this takes several minutes</span>'
-                : '<span>⟳</span><span>Synthesizing...</span>';
 
             try {
-                const endpoint = longForm ? '/api/voice-longform' : '/api/voice';
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ script: currentScript })
-                });
+                if (longForm) {
+                    // Step 1: Split text into chunks
+                    voiceBtn.innerHTML = '<span>⟳</span><span>Splitting text into chunks...</span>';
+                    const splitRes = await fetch('/api/voice/split', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: currentScript })
+                    });
+                    const splitData = await splitRes.json();
+                    if (splitData.error) throw new Error(splitData.error);
 
-                const data = await response.json();
+                    const chunks = splitData.chunks;
+                    const audioChunks = [];
 
-                if (data.error) {
-                    alert('Voice generation error: ' + data.error);
-                    return;
-                }
+                    // Step 2: Synthesize each chunk individually
+                    for (let i = 0; i < chunks.length; i++) {
+                        voiceBtn.innerHTML = `<span>⟳</span><span>Synthesizing chunk ${i + 1} of ${chunks.length}...</span>`;
 
-                // Handle base64 audio data
-                if (data.audio_base64) {
-                    audioPlayer.src = 'data:' + data.audio_mime + ';base64,' + data.audio_base64;
-                } else if (data.audio_url) {
-                    audioPlayer.src = data.audio_url;
-                }
-                audioSection.style.display = 'block';
+                        const chunkRes = await fetch('/api/voice/chunk', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                text: chunks[i],
+                                previous_text: i > 0 ? chunks[i - 1] : null,
+                                next_text: i < chunks.length - 1 ? chunks[i + 1] : null
+                            })
+                        });
+                        const chunkData = await chunkRes.json();
+                        if (chunkData.error) throw new Error(chunkData.error);
 
-                // Update voice info for long-form
-                if (longForm && data.chunks_count) {
+                        // Decode base64 to binary
+                        const binaryStr = atob(chunkData.audio_base64);
+                        const bytes = new Uint8Array(binaryStr.length);
+                        for (let j = 0; j < binaryStr.length; j++) {
+                            bytes[j] = binaryStr.charCodeAt(j);
+                        }
+                        audioChunks.push(bytes);
+                    }
+
+                    // Step 3: Concatenate all chunks in browser
+                    voiceBtn.innerHTML = '<span>⟳</span><span>Stitching audio...</span>';
+                    const totalLength = audioChunks.reduce((sum, chunk) => sum + chunk.length, 0);
+                    const combined = new Uint8Array(totalLength);
+                    let offset = 0;
+                    for (const chunk of audioChunks) {
+                        combined.set(chunk, offset);
+                        offset += chunk.length;
+                    }
+
+                    const blob = new Blob([combined], { type: 'audio/mpeg' });
+                    audioPlayer.src = URL.createObjectURL(blob);
+                    audioSection.style.display = 'block';
                     document.querySelector('.voice-info p').textContent = 
-                        `Generated with ElevenLabs voice clone (${data.chunks_count} chunks stitched)`;
+                        `Generated with ElevenLabs voice clone (${chunks.length} chunks stitched)`;
+
+                } else {
+                    // Short-form: single request
+                    voiceBtn.innerHTML = '<span>⟳</span><span>Synthesizing...</span>';
+                    const response = await fetch('/api/voice', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ script: currentScript })
+                    });
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+
+                    if (data.audio_base64) {
+                        audioPlayer.src = 'data:' + data.audio_mime + ';base64,' + data.audio_base64;
+                    }
+                    audioSection.style.display = 'block';
                 }
 
                 audioSection.scrollIntoView({ behavior: 'smooth' });
 
             } catch (error) {
                 alert('Error generating voice: ' + error.message);
+                console.error(error);
             } finally {
                 voiceBtn.disabled = false;
                 voiceBtn.innerHTML = '<span>🔊</span><span>Generate Voice</span>';
