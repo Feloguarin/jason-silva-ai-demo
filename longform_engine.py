@@ -8,7 +8,6 @@ import sys
 import json
 import time
 import base64
-import subprocess
 import tempfile
 import requests
 import certifi
@@ -452,58 +451,16 @@ def _split_into_chunks(text, max_chars=4500):
     return chunks
 
 
-def _stitch_audio_ffmpeg(chunk_paths, output_path, crossfade_ms=200):
-    """Stitch audio chunks using ffmpeg with crossfade."""
-    if len(chunk_paths) == 1:
-        # Just copy
-        subprocess.run(['cp', chunk_paths[0], output_path], check=True)
-        return
-
-    if len(chunk_paths) == 2:
-        # Simple crossfade between 2 files
-        cf_sec = crossfade_ms / 1000
-        cmd = [
-            'ffmpeg', '-y',
-            '-i', chunk_paths[0],
-            '-i', chunk_paths[1],
-            '-filter_complex',
-            f'[0:a][1:a]acrossfade=d={cf_sec}:c1=tri:c2=tri[out]',
-            '-map', '[out]',
-            '-codec:a', 'libmp3lame', '-q:a', '2',
-            output_path
-        ]
-        subprocess.run(cmd, check=True, capture_output=True)
-        return
-
-    # For 3+ chunks: concatenate with short silence gaps (more reliable than chained crossfade)
-    list_file = output_path + '.list.txt'
-    silence_path = output_path + '.silence.mp3'
-
-    # Generate a short silence file
-    subprocess.run([
-        'ffmpeg', '-y', '-f', 'lavfi', '-i',
-        f'anullsrc=channel_layout=mono:sample_rate=44100',
-        '-t', '0.15', '-codec:a', 'libmp3lame', '-q:a', '2',
-        silence_path
-    ], check=True, capture_output=True)
-
-    # Build concat list with silence between chunks
-    with open(list_file, 'w') as f:
-        for i, path in enumerate(chunk_paths):
-            f.write(f"file '{path}'\n")
-            if i < len(chunk_paths) - 1:
-                f.write(f"file '{silence_path}'\n")
-
-    subprocess.run([
-        'ffmpeg', '-y', '-f', 'concat', '-safe', '0',
-        '-i', list_file,
-        '-codec:a', 'libmp3lame', '-q:a', '2',
-        output_path
-    ], check=True, capture_output=True)
-
-    # Cleanup
-    os.remove(list_file)
-    os.remove(silence_path)
+def _stitch_audio(chunk_paths, output_path):
+    """Stitch audio chunks by direct MP3 byte concatenation.
+    
+    Works without ffmpeg. ElevenLabs outputs same-format MP3s,
+    so raw concatenation produces valid playback.
+    """
+    with open(output_path, 'wb') as out_f:
+        for chunk_path in chunk_paths:
+            with open(chunk_path, 'rb') as chunk_f:
+                out_f.write(chunk_f.read())
 
 
 def synthesize_long_audio(script_text, voice_id=None, progress_callback=None):
@@ -560,7 +517,7 @@ def synthesize_long_audio(script_text, voice_id=None, progress_callback=None):
             progress_callback("voice_stitching", 0)
 
         output_path = os.path.join(tmp_dir, 'final_keynote.mp3')
-        _stitch_audio_ffmpeg(chunk_paths, output_path)
+        _stitch_audio(chunk_paths, output_path)
 
         # Read and encode
         with open(output_path, 'rb') as f:
