@@ -219,8 +219,6 @@ Requirements:
         # Network error - fallback to demo
         return get_demo_script(topic), True
 
-import base64
-
 def generate_voice(script_text):
     """Generate voice using ElevenLabs."""
     
