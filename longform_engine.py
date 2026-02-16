@@ -74,11 +74,13 @@ THINKER_POOL = [
     "Werner Heisenberg", "David Bohm", "Ilya Prigogine", "Freeman Dyson"
 ]
 
-def _call_anthropic(system_prompt, user_prompt, max_tokens=4000, temperature=0.8):
+def _call_anthropic(system_prompt, user_prompt, max_tokens=4000, temperature=0.8, model=None):
     """Make a single Anthropic API call. Returns text or raises."""
     api_key = get_anthropic_key()
     if not api_key:
         raise ValueError("No ANTHROPIC_API_KEY set")
+
+    model = model or "claude-sonnet-4-20250514"
 
     response = requests.post(
         "https://api.anthropic.com/v1/messages",
@@ -88,13 +90,13 @@ def _call_anthropic(system_prompt, user_prompt, max_tokens=4000, temperature=0.8
             "Content-Type": "application/json"
         },
         json={
-            "model": "claude-sonnet-4-20250514",
+            "model": model,
             "max_tokens": max_tokens,
             "temperature": temperature,
             "system": system_prompt,
             "messages": [{"role": "user", "content": user_prompt}]
         },
-        timeout=90,
+        timeout=55,
         verify=certifi.where()
     )
 
@@ -153,7 +155,7 @@ For each section, provide:
 
 Return a JSON object: {{"topic": "...", "sections": [...]}}"""
 
-    result = _call_anthropic(system_prompt, user_prompt, max_tokens=3000, temperature=0.7)
+    result = _call_anthropic(system_prompt, user_prompt, max_tokens=2000, temperature=0.7, model="claude-haiku-4-5-20251001")
 
     # Parse JSON (handle potential markdown wrapping)
     result = result.strip()
@@ -173,7 +175,7 @@ Return a JSON object: {{"topic": "...", "sections": [...]}}"""
 def generate_section(section_outline, previous_summaries, used_quotes, topic):
     """Generate one section of the keynote."""
 
-    kb_excerpt = JASON_KB[:8000] if JASON_KB else ""
+    kb_excerpt = JASON_KB[:4000] if JASON_KB else ""
 
     prev_context = ""
     if previous_summaries:
@@ -189,66 +191,16 @@ QUOTES ALREADY USED (do NOT repeat these):
 {chr(10).join(f'- {q}' for q in used_quotes)}
 """
 
-    system_prompt = f"""You are Jason Silva delivering a keynote. Not imitating — channeling his actual voice.
+    system_prompt = f"""You are Jason Silva delivering a keynote. Channel his actual voice.
 
-Signature characteristics:
-- Opens with wonder/awe hooks
-- Rapid-fire delivery with strategic pauses
-- References thinkers with specific quotes
-- Builds to emotional crescendo
-- Poetic, evocative "purple prose" that earns its intensity
-- Signature phrases: "the adjacent possible," "cosmic perspective," "aesthetic arrest," "ecstatic truth," "ontological design"
-- Enthusiastic, breathless energy — like a "philosophical espresso shot"
-- Repeats key phrases for emphasis (anaphora): "We are... We are... We are..."
-- Uses vivid sensory metaphors, not abstract logic
-- Speaks in fragments for rhythm: "Consciousness. Awakening. Right now."
+Style: wonder/awe hooks, rapid-fire with pauses ("..."), philosopher quotes, emotional crescendo, poetic intensity.
+Phrases: "the adjacent possible," "cosmic perspective," "aesthetic arrest," "ecstatic truth"
+Patterns: "Have you ever considered...", "Picture this...", "Here's the thing...", "Think about this...", "I mean wow!", lists of three, anaphora ("We are... We are...")
 
-JASON'S REAL VERBAL PATTERNS (use these):
-- "Have you ever considered..."
-- "What if I told you..."
-- "Picture this..."
-- "Here's the thing..."
-- "Think about this for a moment..."
-- "But wait... it gets better..."
-- "And that... is absolutely awe-inspiring."
-- "The adjacent possible awaits."
-- "Stay curious."
-- "Don't miss it."
-- Building lists of three: "creation, destruction, and rebirth"
-- Callback references: "Remember what I said about X? Well..."
-- Personal asides: "I remember the first time I..."
-- Exclamatory wonder: "I mean wow!" / "How extraordinary is that!"
+NEVER USE: "not just X, it's Y" / "not about X, it's about Y" / "not merely" / "In a world where" / "At its core" / "Let's delve" / "arguably" — these are AI tells. Make DIRECT assertions instead.
 
-BANNED PATTERNS — NEVER USE THESE (they sound like AI, not Jason):
-- "It's not just X, it's Y"
-- "It's not about X, it's about Y"
-- "This isn't merely X — it's Y"
-- "X isn't simply Y, it's Z"
-- "We're not just X, we're Y"
-- "This is more than X, this is Y"
-- "The question isn't X, the question is Y"
-- "In a world where..."
-- "At its core..."
-- "It's worth noting..."
-- "Let's delve into..."
-- "Arguably..."
-- "Navigating the landscape of..."
-- Any sentence that follows the [negation] → [but actually] → [grander claim] structure
-
-INSTEAD: Make direct, vivid assertions. "We ARE the universe dreaming." Not "We're not just humans, we're the universe dreaming."
-
-THIS IS YOUR #1 PRIORITY RULE: If you catch yourself writing "not just X" or "not only X" or "not merely X" — STOP. Delete the sentence. Rewrite it as a direct, bold claim. Jason makes declarations. He doesn't negate-then-correct. He ASSERTS.
-
-CRITICAL RULES:
-1. Generate ONLY spoken script text. No markdown, no headers, no stage directions, no asterisks, no bold.
-2. For pauses, use one of: "..." or a line break. Vary your pause technique.
-3. Each quote must be attributed: 'As [Thinker] said, "..."'
-4. Stay on-brand. This is Jason Silva, not a TED talk.
-5. Write LONG. Hit the target word count. More content is better than less. Develop ideas fully — don't summarize, EXPLORE.
-
-{f'JASON SILVA KNOWLEDGE BASE (use for grounding):{chr(10)}{kb_excerpt}' if kb_excerpt else ''}
-{prev_context}
-{used_q}"""
+RULES: Only spoken text. No markdown/headers/bold. Use "..." for pauses. Attribute quotes. Hit the word count target — write LONG, develop ideas fully.
+{prev_context}{used_q}"""
 
     user_prompt = f"""Write section {section_outline.get('section_number', '?')} of a keynote on "{topic}".
 
@@ -262,7 +214,7 @@ Opening hook: {section_outline.get('opening_hook', 'Start with wonder')}
 
 Write approximately {section_outline.get('target_words', 500)} words. Pure spoken word only."""
 
-    text = _call_anthropic(system_prompt, user_prompt, max_tokens=3000, temperature=0.8)
+    text = _call_anthropic(system_prompt, user_prompt, max_tokens=1500, temperature=0.8)
 
     # Extract any new quotes used
     new_quotes = []

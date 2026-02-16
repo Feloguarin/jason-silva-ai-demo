@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, send_file
 import os
 import json
 import time
+import base64
 from datetime import datetime
 import requests
 import certifi
